@@ -32,41 +32,41 @@ def get_pages():
             raise
     os.chdir(rcdir + "/pages/" + now)
     for i in links:
-        url = str(i+".xml/?limit=500/?depth=100")
+        url = str(i+".xml/?limit=500")
         page = requests.get(url,headers = {
         'User-Agent' : 'redicorpus v. ' + __version__,
         'From' : __email__}).content
         name = str(re.search(r'[^http://www.reddit.com/r/AskReddit/comments/].{5,5}', i).group() + '.xml')
         f = open(name, 'w')
-        f.write(page)##error: write function is inserting html tag at beginning of file
+        f.write(page)
         f.close()
         time.sleep(2)
     return rcdir, now
 
 def build_corpus():
     rcdir, now = get_pages()
-    comments = unicode()
+    comments = list()
+    os.getcwd()
     for filename in glob.glob('*.xml'):
-        root = etree.XML(filename)
-        for element in root.iter('description'):
-            comments.join(element.text)
+        f = open(filename, 'r')
+        tree = etree.HTML(f.read())
+        f.close()
+        for element in tree.iter('p'):
+            comments.append(element.text)
+    comments = str(comments)
     try:
         os.makedirs(rcdir + "/corpora/" + now)
     except OSError:
         if not os.path.isdir(rcdir + "/corpora/" + now):
             raise
-    os.chdir(os.getcwd() + "/corpora/" + now)
+    os.chdir(rcdir + "/corpora/" + now)
     stems = [PorterStemmer().stem(t) for t in word_tokenize(comments.lower())]
-    f = open('unigram.txt', 'w')
-    f.write(sorted(util.ngrams(stems, 1)))
-    f.close
-    f = open('bigram.txt', 'w')
-    f.write(sorted(util.ngrams(stems, 2)))
-    f.close    
-    f = open('trigram.txt', 'w')
-    f.write(sorted(util.ngrams(stems, 3)))
-    f.close
-    return "Done!"
+    for i in (1,2,3):
+        body = str(sorted(util.ngrams(stems, i)))
+        f = open(str(i) + 'gram.txt', 'w')
+        f.write(body)
+        f.close()
+    print "Done!"
 
 if __name__ == "__main__":
     build_corpus()
