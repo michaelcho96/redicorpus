@@ -12,6 +12,7 @@ from lxml import etree
 from nltk import util, word_tokenize, PorterStemmer
 
 def get_links():
+    print "Fetching links"
     page = etree.XML(requests.get('http://reddit.com/r/Askreddit/.xml', headers = {
         'User-Agent' : 'redicorpus v. ' + __version__,
         'From' : __email__
@@ -31,6 +32,7 @@ def get_pages():
         if not os.path.isdir(rcdir + "/pages/" + now):
             raise
     os.chdir(rcdir + "/pages/" + now)
+    print "Getting pages"
     for i in links:
         url = str(i+".xml/?limit=500")
         page = requests.get(url,headers = {
@@ -46,20 +48,24 @@ def get_pages():
 def build_corpus():
     rcdir, now = get_pages()
     comments = list()
-    os.getcwd()
+    print "Getting strings"
     for filename in glob.glob('*.xml'):
         f = open(filename, 'r')
         tree = etree.HTML(f.read())
         f.close()
         for element in tree.iter('p'):
             comments.append(element.text)
-    comments = str(comments)
+    while comments.count(None) > 0:
+        comments.remove(None)
+    comments = ' '.join(comments)
+    comments = comments.encode('ascii','ignore')
     try:
         os.makedirs(rcdir + "/corpora/" + now)
     except OSError:
         if not os.path.isdir(rcdir + "/corpora/" + now):
             raise
     os.chdir(rcdir + "/corpora/" + now)
+    print "Making tokens"
     stems = [PorterStemmer().stem(t) for t in word_tokenize(comments.lower())]
     for i in (1,2,3):
         body = str(sorted(util.ngrams(stems, i)))
@@ -68,7 +74,13 @@ def build_corpus():
         f.close()
     print "Done!"
 
+def dailies():
+    if len(glob.glob(os.getcwd() + '/corpora/*')) > 7:
+        print 'Running daily'
+    else:
+        print 'Not enough data to run comparison'
+
 if __name__ == "__main__":
     build_corpus()
 else:
-    print "Goodbye"
+    print "Script not run"
