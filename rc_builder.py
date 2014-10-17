@@ -7,9 +7,8 @@ __author__ = "Dillon Niederhut"
 __version__ = "0.0.1"
 __email__ = "dillon.niederhut@gmail.com"
 
-import requests, re, io, time, os, glob
+import requests, re, time, os, glob
 from lxml import etree
-from nltk import util, word_tokenize, PorterStemmer
 
 def get_links():
     print "Fetching links"
@@ -24,7 +23,7 @@ def get_links():
 
 def get_pages():
     links = get_links()
-    rcdir = os.getcwd()
+    rcdir = os.environ.get('RCDIR')
     now = time.strftime("%Y_%m_%d")
     try:
         os.makedirs(rcdir + "/pages/" + now)
@@ -47,6 +46,7 @@ def get_pages():
 
 def build_corpus():
     rcdir, now = get_pages()
+    from nltk import util, word_tokenize, PorterStemmer
     comments = list()
     print "Getting strings"
     for filename in glob.glob('*.xml'):
@@ -68,19 +68,54 @@ def build_corpus():
     print "Making tokens"
     stems = [PorterStemmer().stem(t) for t in word_tokenize(comments.lower())]
     for i in (1,2,3):
-        body = str(sorted(util.ngrams(stems, i)))
+        print "making tokens for " + i + "grams"
+        body = util.ngrams(stems, i)
+        dictionary = dict()
+        for gram in set(body):
+            dictionary.update({gram : body.count(gram)})
         f = open(str(i) + 'gram.txt', 'w')
-        f.write(body)
+        f.write(str(sorted(dictionary)))
         f.close()
-    print "Done!"
+    return rcdir, now
 
 def dailies():
-    if len(glob.glob(os.getcwd() + '/corpora/*')) > 7:
+    rcdir, now = build_corpus()
+    from sklearn.feature_extraction import DictVectorizer
+    from sklearn.feature_extraction.text import TfidfTransformer
+    from sklearn.decomposition import NMF
+    if len(glob.glob(rcdir + '/corpora/*')) > 7:
         print 'Running daily'
+        V = DictVectorizer()
+        T = TfidfTransformer()
+        top_ten = list()
+        for i in (1,2,3):
+            mappings = list()
+            for filename in glob.glob(rcdir + '/corpora/*/' + i + 'gram.txt')[-31:]:
+                f = open(filename, 'r')
+                text = eval(f.read())
+                f.close()
+                mappings.append(text)
+            vectorized = V.fit_transform(mappings)
+            transformed = T.fit_transform(vectorized)
+            coefficients = list()
+            for ix, item in enumerate(V.get_feature_names()):
+                coefficients.append((transformed.getrow(-1).todense()[:,ix], item))
+            for value in sorted(coefficients, reverse = True)[:10]:
+                top_ten.append(value[-1])
+        try:
+            os.makedirs(rcdir + "/dailies/")
+        except OSError:
+            if not os.path.isdir(rcdir + "/dailies/"):
+                raise
+        os.chdir(rcdir + "/dailies/")
+        f = open(now + '.txt','w')
+        f.write(str(top_ten))
+        f.close()
     else:
         print 'Not enough data to run comparison'
 
 if __name__ == "__main__":
-    build_corpus()
+    dailies()
+    print "Done!"
 else:
     print "Script not run"
