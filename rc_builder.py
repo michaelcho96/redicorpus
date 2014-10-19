@@ -10,6 +10,8 @@ __email__ = "dillon.niederhut@gmail.com"
 import requests, re, time, os, glob, logging
 
 def get_links():
+    # Retrieves top ten links from AskReddit and returns them as a list
+    # of web addresses
     from lxml import etree
     print "Fetching links"
     page = etree.XML(requests.get('http://reddit.com/r/Askreddit/.xml', headers = {
@@ -22,14 +24,16 @@ def get_links():
     logging.info('links = ' + links)
     return links
 
-def get_pages(directory = rcdir, time = now):
+def get_pages(directory = RCDIR, time = NOW):
+    # Retrieves AskReddit comments and saves them to disk as unique id names
+    # in a dated folder
     links = get_links()
     try:
-        os.makedirs(rcdir + "/pages/" + now)
+        os.makedirs(RCDIR + "/pages/" + NOW)
     except OSError:
-        if not os.path.isdir(rcdir + "/pages/" + now):
+        if not os.path.isdir(RCDIR + "/pages/" + NOW):
             raise
-    os.chdir(rcdir + "/pages/" + now)
+    os.chdir(RCDIR + "/pages/" + NOW)
     print "Getting pages"
     for i in links:
         url = str(i+".xml/?limit=500")
@@ -40,11 +44,12 @@ def get_pages(directory = rcdir, time = now):
         f = open(name, 'w')
         f.write(page)
         f.close()
-        logging.info(url + ' saved as ' + name + ' in ' + rcdir + "/pages/" + now)
+        logging.info(url + ' saved as ' + name + ' in ' + RCDIR + "/pages/" + NOW)
         time.sleep(2)
 
-
-def build_corpus(directory = rcdir, time = now):
+def build_corpus(directory = RCDIR, time = NOW):
+    # Builds unigram, bigram, and trigram count dictionaries from a set of xml
+    # documents
     from lxml import etree
     from nltk import util, word_tokenize, PorterStemmer
     comments = list()
@@ -62,11 +67,11 @@ def build_corpus(directory = rcdir, time = now):
     for i in (',','.',':',';','"'):
         comments = comments.replace(i,'')
     try:
-        os.makedirs(rcdir + "/corpora/" + now)
+        os.makedirs(RCDIR + "/corpora/" + NOW)
     except OSError:
-        if not os.path.isdir(rcdir + "/corpora/" + now):
+        if not os.path.isdir(RCDIR + "/corpora/" + NOW):
             raise
-    os.chdir(rcdir + "/corpora/" + now)
+    os.chdir(RCDIR + "/corpora/" + NOW)
     stems = [PorterStemmer().stem(t) for t in word_tokenize(comments.lower())]
     logging.info('Stem number = ' + len(stems))
     for i in (1,2,3):
@@ -81,20 +86,23 @@ def build_corpus(directory = rcdir, time = now):
         f = open(str(i) + 'gram.txt', 'w')
         f.write(str(sorted(dictionary)))
         f.close()
-        logging.info(str(i) + 'gram.txt saved in ' + rcdir + "/corpora/" + now)
+        logging.info(str(i) + 'gram.txt saved in ' + RCDIR + "/corpora/" + NOW)
 
-def daily(directory = rcdir, time = now):
+def daily(directory = RCDIR, time = NOW):
+    # Compares a day's corpus with previous days' corpora (at least one week
+    # and up to one month), finds the top ten most unique unigrams, bigrams,
+    # and trigrams, and outputs them as a dated file
     from sklearn.feature_extraction import DictVectorizer
     from sklearn.feature_extraction.text import TfidfTransformer
     from sklearn.decomposition import NMF
-    if len(glob.glob(rcdir + '/corpora/*')) > 7:
+    if len(glob.glob(RCDIR + '/corpora/*')) > 7:
         logging.info('Running daily')
         V = DictVectorizer()
         T = TfidfTransformer()
         top_ten = list()
         for i in (1,2,3):
             mappings = list()
-            for filename in glob.glob(rcdir + '/corpora/*/' + i + 'gram.txt')[-31:]:
+            for filename in glob.glob(RCDIR + '/corpora/*/' + i + 'gram.txt')[-31:]:
                 f = open(filename, 'r')
                 text = eval(f.read())
                 f.close()
@@ -107,27 +115,27 @@ def daily(directory = rcdir, time = now):
             for value in sorted(coefficients, reverse = True)[:10]:
                 top_ten.append(value[-1])
         try:
-            os.makedirs(rcdir + "/dailies/")
+            os.makedirs(RCDIR + "/dailies/")
         except OSError:
-            if not os.path.isdir(rcdir + "/dailies/"):
+            if not os.path.isdir(RCDIR + "/dailies/"):
                 raise
-        os.chdir(rcdir + "/dailies/")
-        f = open(now + '.txt','w')
+        os.chdir(RCDIR + "/dailies/")
+        f = open(NOW + '.txt','w')
         f.write(str(top_ten))
         f.close()
-        logging.info(now + '.txt' + 'saved in ' rcdir + "/dailies/")
+        logging.info(NOW + '.txt' + 'saved in ' RCDIR + "/dailies/")
     else:
         logging.info('Not enough data to run comparison')
 
 if __name__ == "__main__":   
     logging.basicConfig(filename = 'rc_builder.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting script')
-    rcdir = os.environ.get('RCDIR')
-    now = time.strftime("%Y_%m_%d")
-    logging.info('Directory = ' + rcdir + ', Time = ' + now)
-    get_pages(rcdir, now)
-    build_corpus(rcdir, now)
-    daily(rcdir, now)
+    RCDIR = os.environ.get('RCDIR')
+    NOW = time.strftime("%Y_%m_%d")
+    logging.info('Directory = ' + RCDIR + ', Time = ' + NOW)
+    get_pages(RCDIR, NOW)
+    build_corpus(RCDIR, NOW)
+    daily(RCDIR, NOW)
     logging.info('Finished script')
 else:
     logging.info('Script failed to initialize')
