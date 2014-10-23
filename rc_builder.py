@@ -8,6 +8,8 @@ __version__ = "0.0.1"
 __email__ = "dillon.niederhut@gmail.com"
 
 import requests, re, time, os, glob, logging
+RCDIR = os.environ.get('RCDIR')
+NOW = time.strftime("%Y_%m_%d")
 
 def get_links():
     # Retrieves top ten links from AskReddit and returns them as a list
@@ -21,10 +23,10 @@ def get_links():
     links = list()
     for element in page.iter('guid'):
         links.append(element.text)
-    logging.info('links = ' + links)
+    logging.debug('links = ' + str(links))
     return links
 
-def get_pages(directory = RCDIR, time = NOW):
+def get_pages(directory = RCDIR, date = NOW):
     # Retrieves AskReddit comments and saves them to disk as unique id names
     # in a dated folder
     links = get_links()
@@ -44,10 +46,10 @@ def get_pages(directory = RCDIR, time = NOW):
         f = open(name, 'w')
         f.write(page)
         f.close()
-        logging.info(url + ' saved as ' + name + ' in ' + RCDIR + "/pages/" + NOW)
+        logging.debug(url + ' saved as ' + name + ' in ' + RCDIR + "/pages/" + NOW)
         time.sleep(2)
 
-def build_corpus(directory = RCDIR, time = NOW):
+def build_corpus(directory = RCDIR, date = NOW):
     # Builds unigram, bigram, and trigram count dictionaries from a set of xml
     # documents
     from lxml import etree
@@ -61,7 +63,7 @@ def build_corpus(directory = RCDIR, time = NOW):
             comments.append(element.text)
     while comments.count(None) > 0:
         comments.remove(None)
-    logging.info('Comment number = ' + len(comments))
+    logging.info('Comment number = ' + str(len(comments)))
     comments = ' '.join(comments)
     comments = comments.encode('ascii','ignore')
     for i in (',','.',':',';','"'):
@@ -73,14 +75,14 @@ def build_corpus(directory = RCDIR, time = NOW):
             raise
     os.chdir(RCDIR + "/corpora/" + NOW)
     stems = [PorterStemmer().stem(t) for t in word_tokenize(comments.lower())]
-    logging.info('Stem number = ' + len(stems))
+    logging.info('Stem number = ' + str(len(stems)))
     for i in (1,2,3):
-        logging.info('Making tokens for ' + i + 'grams')
+        logging.info('Making tokens for ' + str(i) + 'grams')
         body = util.ngrams(stems, i)
-        logging.info(i + 'gram number = ' + len(body))
+        logging.info(str(i) + 'gram number = ' + str(len(body)))
         dictionary = dict()
         grams = set(body)
-        logging.info('Unique ' i + 'gram number = ' + len(grams))
+        logging.info('Unique ' + str(i) + 'gram number = ' + str(len(grams)))
         for gram in grams:
             dictionary.update({gram : body.count(gram)})
         f = open(str(i) + 'gram.txt', 'w')
@@ -88,7 +90,7 @@ def build_corpus(directory = RCDIR, time = NOW):
         f.close()
         logging.info(str(i) + 'gram.txt saved in ' + RCDIR + "/corpora/" + NOW)
 
-def daily(directory = RCDIR, time = NOW):
+def daily(directory = RCDIR, date = NOW):
     # Compares a day's corpus with previous days' corpora (at least one week
     # and up to one month), finds the top ten most unique unigrams, bigrams,
     # and trigrams, and outputs them as a dated file
@@ -102,7 +104,7 @@ def daily(directory = RCDIR, time = NOW):
         top_ten = list()
         for i in (1,2,3):
             mappings = list()
-            for filename in glob.glob(RCDIR + '/corpora/*/' + i + 'gram.txt')[-31:]:
+            for filename in glob.glob(RCDIR + '/corpora/*/' + str(i) + 'gram.txt')[-31:]:
                 f = open(filename, 'r')
                 text = eval(f.read())
                 f.close()
@@ -123,15 +125,13 @@ def daily(directory = RCDIR, time = NOW):
         f = open(NOW + '.txt','w')
         f.write(str(top_ten))
         f.close()
-        logging.info(NOW + '.txt' + 'saved in ' RCDIR + "/dailies/")
+        logging.info(NOW + '.txt' + 'saved in ' + RCDIR + "/dailies/")
     else:
         logging.info('Not enough data to run comparison')
 
 if __name__ == "__main__":   
     logging.basicConfig(filename = 'rc_builder.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting script')
-    RCDIR = os.environ.get('RCDIR')
-    NOW = time.strftime("%Y_%m_%d")
     logging.info('Directory = ' + RCDIR + ', Time = ' + NOW)
     get_pages(RCDIR, NOW)
     build_corpus(RCDIR, NOW)
