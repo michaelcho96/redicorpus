@@ -12,17 +12,22 @@ RCDIR = os.environ.get('RCDIR')
 NOW = time.strftime("%Y_%m_%d")
 
 def get_links():
-    # Retrieves top ten links from AskReddit and returns them as a list
+    # Retrieves top hundred links from AskReddit and returns them as a list
     # of web addresses
     from lxml import etree
-    print "Fetching links"
-    page = etree.XML(requests.get('http://reddit.com/r/Askreddit/.xml', headers = {
-        'User-Agent' : 'redicorpus v. ' + __version__,
-        'From' : __email__
-    }).content)
+    logging.info("Fetching links")
+    base_url = 'http://reddit.com/r/Askreddit/.xml'
+    last = ''
     links = list()
-    for element in page.iter('guid'):
-        links.append(element.text)
+    for i in ('','?after=t3_','?after=t3_','?after=t3_'):
+        page = etree.HTML(requests.get(base_url + i + last, headers = {
+            'User-Agent' : 'redicorpus v. ' + __version__,
+            'From' : __email__
+        }).content)
+        for element in page.iter('guid'):
+            links.append(element.text)
+        last = re.search(r'[^http://www.reddit.com/r/AskReddit/comments/].{5}',links[-1]).group()
+        time.sleep(2)
     logging.debug('links = ' + str(links))
     return links
 
@@ -36,13 +41,13 @@ def get_pages(directory = RCDIR, date = NOW):
         if not os.path.isdir(RCDIR + "/pages/" + NOW):
             raise
     os.chdir(RCDIR + "/pages/" + NOW)
-    print "Getting pages"
+    logging.info("Getting pages")
     for i in links:
-        url = str(i+".xml/?limit=500")
+        url = str(i+".xml?limit=500")
         page = requests.get(url,headers = {
         'User-Agent' : 'redicorpus v. ' + __version__,
         'From' : __email__}).content
-        name = str(re.search(r'[^http://www.reddit.com/r/AskReddit/comments/].{5,5}', i).group() + '.xml')
+        name = str(re.search(r'[^http://www.reddit.com/r/AskReddit/comments/].{5}', i).group() + '.xml')
         f = open(name, 'w')
         f.write(page)
         f.close()
@@ -54,12 +59,13 @@ def build_corpus(directory = RCDIR, date = NOW):
     # documents
     from lxml import etree
     from nltk import util, word_tokenize, PorterStemmer
+    os.chdir(RCDIR + "/pages/" + NOW)
     comments = list()
     for filename in glob.glob('*.xml'):
         f = open(filename, 'r')
         tree = etree.HTML(f.read())
         f.close()
-        for element in tree.iter('p'):
+        for element in tree.iter('description'):
             comments.append(element.text)
     while comments.count(None) > 0:
         comments.remove(None)
@@ -81,12 +87,12 @@ def build_corpus(directory = RCDIR, date = NOW):
         body = util.ngrams(stems, i)
         logging.info(str(i) + 'gram number = ' + str(len(body)))
         dictionary = dict()
-        grams = set(body)
-        logging.info('Unique ' + str(i) + 'gram number = ' + str(len(grams)))
-        for gram in grams:
-            dictionary.update({gram : body.count(gram)})
+        unique_tokens = set(body)
+        logging.info('Unique ' + str(i) + 'gram number = ' + str(len(unique_tokens)))
+        for element in unique_tokens:
+            dictionary.update({element:body.count(element)})
         f = open(str(i) + 'gram.txt', 'w')
-        f.write(str(sorted(dictionary)))
+        f.write(str(dictionary))
         f.close()
         logging.info(str(i) + 'gram.txt saved in ' + RCDIR + "/corpora/" + NOW)
 
@@ -129,7 +135,8 @@ def daily(directory = RCDIR, date = NOW):
     else:
         logging.info('Not enough data to run comparison')
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
+    os.chdir(RCDIR) 
     logging.basicConfig(filename = 'rc_builder.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting script')
     logging.info('Directory = ' + RCDIR + ', Time = ' + NOW)
