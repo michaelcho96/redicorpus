@@ -10,9 +10,9 @@ __email__ = "dillon.niederhut@gmail.com"
 import requests, re, time, os, glob, logging
 #RCDIR = os.environ.get('RCDIR')
 RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
-FILENAME = time.strftime("%Y_%m_%d") + '_counts.csv'
+FILENAME = 'total_counts.csv'
 
-def count_comments():
+def count_comments(init = False):
     # Grabs the top 100 links from AskRedddit and sums their comment counts
     # every hour, and logs the totals in a csv
     from lxml import etree
@@ -22,9 +22,10 @@ def count_comments():
         if not os.path.isdir(RCDIR + "/counts/"):
             raise
     os.chdir(RCDIR + "/counts/")
-    f = open(FILENAME, 'w')
-    f.write('year,mon,mday,wday,hour,min,count\n')
-    f.close()
+    if not os.path.isfile('total_counts.csv'):
+        f = open(FILENAME, 'a')
+        f.write('year,mon,mday,wday,hour,min,count\n')
+        f.close()
     logging.info("Fetching links")
     while True:
         base_url = 'http://reddit.com/r/Askreddit/.xml'
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     logging.basicConfig(filename = 'counter.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting counter')
     logging.info('Directory = ' + RCDIR)
-    count_comments()
+    count_comments(init = True)
     logging.info('Finished script')
 else:
     logging.info('Script failed to initialize')
