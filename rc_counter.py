@@ -13,8 +13,15 @@ RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
 FILENAME = time.strftime("%Y_%m_%d") + '_counts.csv'
 
 def count_comments():
-    # 
+    # Grabs the top 100 links from AskRedddit and sums their comment counts
+    # every hour, and logs the totals in a csv
     from lxml import etree
+    try:
+        os.makedirs(RCDIR + "/counts/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/counts/"):
+            raise
+    os.chdir(RCDIR + "/counts/")
     f = open(FILENAME, 'w')
     f.write('year,mon,mday,wday,hour,min,count\n')
     f.close()
@@ -26,7 +33,7 @@ def count_comments():
         comment_number = int(0)
         for i in ('','?after=t3_','?after=t3_','?after=t3_'):
             page = etree.HTML(requests.get(base_url + i + last, headers = {
-                'User-Agent' : 'redicorpus v. ' + __version__,
+                'User-Agent' : 'comment counter v. ' + __version__,
                 'From' : __email__
             }).content)
             for item in page.iter('item'):
