@@ -12,7 +12,7 @@ import requests, re, time, os, glob, logging
 RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
 FILENAME = 'total_counts.csv'
 
-def count_comments(init = False):
+def count_comments():
     # Grabs the top 100 links from AskRedddit and sums their comment counts
     # every hour, and logs the totals in a csv
     from lxml import etree
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     logging.basicConfig(filename = 'counter.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting counter')
     logging.info('Directory = ' + RCDIR)
-    count_comments(init = True)
+    count_comments()
     logging.info('Finished script')
 else:
     logging.info('Script failed to initialize')

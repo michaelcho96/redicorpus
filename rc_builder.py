@@ -84,7 +84,7 @@ def build_corpus(directory = RCDIR, date = NOW):
     logging.info('Stem number = ' + str(len(stems)))
     for i in (1,2,3):
         logging.info('Making tokens for ' + str(i) + 'grams')
-        body = util.ngrams(stems, i)
+        body = util.ngrams(stems, i):
         logging.info(str(i) + 'gram number = ' + str(len(body)))
         dictionary = dict()
         unique_tokens = set(body)
@@ -102,7 +102,6 @@ def daily(directory = RCDIR, date = NOW):
     # and trigrams, and outputs them as a dated file
     from sklearn.feature_extraction import DictVectorizer
     from sklearn.feature_extraction.text import TfidfTransformer
-    from sklearn.decomposition import NMF
     if len(glob.glob(RCDIR + '/corpora/*')) > 7:
         logging.info('Running daily')
         V = DictVectorizer()
