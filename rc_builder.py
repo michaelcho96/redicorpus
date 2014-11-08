@@ -44,6 +44,7 @@ def get_pages(directory = RCDIR, date = NOW):
     logging.info("Getting pages")
     for i in links:
         url = str(i+".xml?limit=500")
+        t1 = time.time()
         page = requests.get(url,headers = {
         'User-Agent' : 'redicorpus v. ' + __version__,
         'From' : __email__}).content
@@ -52,7 +53,10 @@ def get_pages(directory = RCDIR, date = NOW):
         f.write(page)
         f.close()
         logging.debug(url + ' saved as ' + name + ' in ' + RCDIR + "/pages/" + NOW)
-        time.sleep(2)
+        if time.time() - t1 < 2:
+            time.sleep(2 - time.time() - t1)
+        else:
+            pass
 
 def build_corpus(directory = RCDIR, date = NOW):
     # Builds unigram, bigram, and trigram count dictionaries from a set of xml
@@ -62,9 +66,8 @@ def build_corpus(directory = RCDIR, date = NOW):
     os.chdir(RCDIR + "/pages/" + NOW)
     comments = list()
     for filename in glob.glob('*.xml'):
-        f = open(filename, 'r')
-        tree = etree.HTML(f.read())
-        f.close()
+        with open(filename, 'r') as f:
+            tree = etree.HTML(f.read())
         for element in tree.iter('description'):
             comments.append(element.text)
     while comments.count(None) > 0:
@@ -93,10 +96,9 @@ def build_corpus(directory = RCDIR, date = NOW):
                 dictionary.update({element:dictionary.get(element) + 1})
             else:
                 dictionary.update({element:1})
-        unique_tokens = len(dictionary)
-        logging.info('Unique ' + str(i) + 'gram number = ' + str(len(unique_tokens)))
-        f.write(str(dictionary))
-        f.close()
+        logging.info('Unique ' + str(i) + 'gram number = ' + str(len(dictionary)))
+        with open(str(i) + 'gram.txt', 'w') as dictionary_file:
+            dictionary_file.write(str(dictionary))
         logging.info(str(i) + 'gram.txt saved in ' + RCDIR + "/corpora/" + NOW)
 
 def daily(directory = RCDIR, date = NOW):
