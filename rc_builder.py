@@ -4,7 +4,7 @@ AskReddit-based corpus builder
 In development
 """
 __author__ = "Dillon Niederhut"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __email__ = "dillon.niederhut@gmail.com"
 
 import requests, re, time, os, glob, logging
@@ -87,11 +87,14 @@ def build_corpus(directory = RCDIR, date = NOW):
         body = util.ngrams(stems, i):
         logging.info(str(i) + 'gram number = ' + str(len(body)))
         dictionary = dict()
-        unique_tokens = set(body)
+        while len(body) > 0:
+            element = body.pop()
+            if dictionary.has_key(element):
+                dictionary.update({element:dictionary.get(element) + 1})
+            else:
+                dictionary.update({element:1})
+        unique_tokens = len(dictionary)
         logging.info('Unique ' + str(i) + 'gram number = ' + str(len(unique_tokens)))
-        for element in unique_tokens:
-            dictionary.update({element:body.count(element)})
-        f = open(str(i) + 'gram.txt', 'w')
         f.write(str(dictionary))
         f.close()
         logging.info(str(i) + 'gram.txt saved in ' + RCDIR + "/corpora/" + NOW)
