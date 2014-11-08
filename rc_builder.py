@@ -114,7 +114,7 @@ def daily(directory = RCDIR, date = NOW):
         top_ten = list()
         for i in (1,2,3):
             mappings = list()
-            for filename in glob.glob(RCDIR + '/corpora/*/' + str(i) + 'gram.txt')[-31:]:
+            for filename in sorted(glob.glob(RCDIR + '/corpora/*/' + str(i) + 'gram.txt')[-31:]):
                 f = open(filename, 'r')
                 text = eval(f.read())
                 f.close()
@@ -125,7 +125,7 @@ def daily(directory = RCDIR, date = NOW):
             for ix, item in enumerate(V.get_feature_names()):
                 coefficients.append((transformed.getrow(-1).todense()[:,ix], item))
             for value in sorted(coefficients, reverse = True)[:10]:
-                top_ten.append(value[-1])
+                top_ten.append((value[-1],int(value[0])))
         try:
             os.makedirs(RCDIR + "/dailies/")
         except OSError:
