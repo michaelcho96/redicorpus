@@ -83,7 +83,7 @@ def build_corpus(directory = RCDIR, date = NOW):
     comments = comments.encode('ascii','ignore')
     for i in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>'):
         comments = comments.replace(i,'')
-    comments = comments.replace('&','and ')
+    comments = comments.replace('&',' and ')
     try:
         os.makedirs(RCDIR + "/corpora/" + date)
     except OSError:
