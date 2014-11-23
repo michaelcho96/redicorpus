@@ -85,9 +85,8 @@ def string_tracker(STRING):
                 tree = etree.HTML(f.read())
                 f.close()
                 for comment in tree.iter('description'):
-                    new_count = comment.text.count(str(STRING))
-                    if new_count != None:
-                        count += new_count
+                    if comment.text != None:
+                        count += comment.text.count(str(STRING))
             csv.write(year + ',' + mon + ',' + day + ',' + str(count) + '\n')
     logging.info(str(STRING) + '\'s counted')
 
