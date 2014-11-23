@@ -75,7 +75,7 @@ def string_tracker(STRING):
     with open(FILENAME, 'a') as csv:
         for path in glob.glob(RCDIR + '/pages/*/'):
             logging.debug(path)
-            count = int()
+            count = 0
             date = re.search('[0-9_]{10}',path).group()
             year = date[0:4]
             mon = date[5:7]
@@ -85,7 +85,9 @@ def string_tracker(STRING):
                 tree = etree.HTML(f.read())
                 f.close()
                 for comment in tree.iter('description'):
-                    count = count + comment.text.count(str(STRING))
+                    new_count = comment.text.count(str(STRING))
+                    if new_count != None:
+                        count += new_count
             csv.write(year + ',' + mon + ',' + day + ',' + str(count) + '\n')
     logging.info(str(STRING) + '\'s counted')
 
