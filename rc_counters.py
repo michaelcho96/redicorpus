@@ -9,22 +9,26 @@ __author__ = "Dillon Niederhut"
 __version__ = "0.0.2"
 __email__ = "dillon.niederhut@gmail.com"
 
-import re, os, glob, logging
-RCDIR = os.environ.get('RCDIR')
+import re
+import os
+import glob
+import logging
+#RCDIR = os.environ.get('RCDIR')
+RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
+logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
 
 def token_tracker(TOKEN):
     # Expects TOKEN to be a tuple of strings with length of 1, 2, or 3
     # For example, to search for 'foo', enter TOKEN = ('foo',)
     import ast
-    if type(TOKEN) != tuple:
-        raise TypeError('TOKEN is not a tuple')
-    GRAM = len(TOKEN)
+    if type(TOKEN) != str:
+        raise TypeError('TOKEN is not a string')
+    GRAM = len(TOKEN.split(' '))
     if GRAM < 1:
         raise ValueError('Length of TOKEN is less than one')
     if GRAM > 3:
         raise ValueError('Length of TOKEN is greater than three')
     os.chdir(RCDIR)
-    logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
     logging.info('Starting token counter')
     logging.debug(RCDIR)
     try:
@@ -58,7 +62,6 @@ def token_tracker(TOKEN):
 def string_tracker(STRING):
     from lxml import etree
     os.chdir(RCDIR)
-    logging.basicConfig(filename = 'tracker.log', level = logging.INFO, format = '%(asctime)s %(message)s')
     logging.info('Starting string counter')
     logging.debug(RCDIR)
     try:
@@ -89,4 +92,31 @@ def string_tracker(STRING):
                         count += comment.text.count(str(STRING))
             csv.write(year + ',' + mon + ',' + day + ',' + str(count) + '\n')
     logging.info(str(STRING) + '\'s counted')
+
+def string_context(STRING):
+    from lxml import etree
+    os.chdir(RCDIR)
+    logging.info('Starting string context')
+    context = list()
+    STRING = STRING.lower()
+    try:
+        os.makedirs(RCDIR + "/context/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/context/"):
+            raise
+    FILENAME = RCDIR + '/context/string_'+ STRING.replace(' ','_') + '.txt'
+    logging.debug(FILENAME)
+    for page in glob.glob(RCDIR + '/pages/*/*.xml'):
+        with open(page, 'r') as f:
+            tree = etree.HTML(f.read())
+        for comment in tree.iter('description'):
+            if re.search(STRING, comment.text.lower()):
+                paragraphs = comment.text.lower().split('\n')
+                for item in paragraphs:
+                    if re.search(STRING, item):
+                        context.append(item)
+    if not os.path.isfile(FILENAME):
+        with open(FILENAME, 'w') as f:
+            f.write(str(context))
+
 
