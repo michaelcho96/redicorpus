@@ -38,10 +38,8 @@ def token_tracker(TOKEN):
             raise
     FILENAME = RCDIR + '/trackers/token_'+ str(TOKEN) + '.csv'
     logging.debug(FILENAME)
-    if not os.path.isfile(FILENAME):
-        with open(FILENAME, 'w') as f:
-            f.write('year,mon,mday,count\n')
-    with open(FILENAME, 'a') as csv:
+    with open(FILENAME, 'w') as csv:
+        csv.write('year,mon,mday,count\n')
         for path in glob.glob(RCDIR + '/corpora/*/' + str(GRAM) + 'gram.txt'):
             logging.debug(path)
             date = re.search('[0-9_]{10}',path).group()
@@ -71,11 +69,8 @@ def string_tracker(STRING):
             raise
     FILENAME = RCDIR + '/trackers/string_'+ str(STRING) + '.csv'
     logging.debug(FILENAME)
-    if not os.path.isfile(FILENAME):
-        f = open(FILENAME, 'w')
-        f.write('year,mon,mday,count\n')
-        f.close()
-    with open(FILENAME, 'a') as csv:
+    with open(FILENAME, 'w') as csv:
+        csv.write('year,mon,mday,count\n')
         for path in glob.glob(RCDIR + '/pages/*/'):
             logging.debug(path)
             count = 0
@@ -93,10 +88,10 @@ def string_tracker(STRING):
             csv.write(year + ',' + mon + ',' + day + ',' + str(count) + '\n')
     logging.info(str(STRING) + '\'s counted')
 
-def string_context(STRING):
+def fetch_context(STRING):
     from lxml import etree
     os.chdir(RCDIR)
-    logging.info('Starting string context')
+    logging.info('Starting context fetcher')
     context = list()
     STRING = STRING.lower()
     try:
@@ -104,7 +99,7 @@ def string_context(STRING):
     except OSError:
         if not os.path.isdir(RCDIR + "/context/"):
             raise
-    FILENAME = RCDIR + '/context/string_'+ STRING.replace(' ','_') + '.txt'
+    FILENAME = RCDIR + '/context/'+ STRING.replace(' ','_') + '.txt'
     logging.debug(FILENAME)
     for page in glob.glob(RCDIR + '/pages/*/*.xml'):
         with open(page, 'r') as f:
@@ -119,4 +114,38 @@ def string_context(STRING):
         with open(FILENAME, 'w') as f:
             f.write(str(context))
 
-
+def sentiment_tracker(STRING):
+    if type(STRING) != str:
+        raise TypeError('STRING is not a string')
+    from lxml import etree
+    from textblob import TextBlob
+    os.chdir(RCDIR)
+    logging.info('Starting sentiment tracker')
+    logging.debug(RCDIR)
+    try:
+        os.makedirs(RCDIR + "/sentiment/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/sentiment/"):
+            raise
+    FILENAME = RCDIR + '/sentiment/'+ STRING.replace(' ','_') + '.csv'
+    logging.debug(FILENAME)
+    STRING = STRING.lower()       
+    with open(FILENAME, 'w') as csv:
+        csv.write('year,mon,mday,polarity\n')
+        for path in glob.glob(RCDIR + '/pages/*/'):
+            logging.debug(path)
+            date = re.search('[0-9_]{10}',path).group()
+            year = date[0:4]
+            mon = date[5:7]
+            day = date[8:10]
+            comments = str()
+            for page in glob.glob(path + '*.xml'):
+                with open(page,'r') as f:
+                    tree = etree.HTML(f.read())
+                for item in tree.iter('description'):
+                    if re.search(STRING,item.text.lower()):
+                        comments += item.text.lower()
+            polarity = TextBlob(comments).sentiment.polarity
+            if comments != "":
+                csv.write(year + ',' + mon + ',' + day + ',' + str(polarity) + '\n')
+    logging.info(str(STRING) + '\'s counted')
