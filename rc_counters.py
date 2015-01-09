@@ -105,11 +105,12 @@ def fetch_context(STRING):
         with open(page, 'r') as f:
             tree = etree.HTML(f.read())
         for comment in tree.iter('description'):
-            if re.search(STRING, comment.text.lower()):
-                paragraphs = comment.text.lower().split('\n')
-                for item in paragraphs:
-                    if re.search(STRING, item):
-                        context.append(item)
+            if comment.text != None:
+                if re.search(STRING, comment.text.lower()):
+                    paragraphs = comment.text.lower().split('\n')
+                    for item in paragraphs:
+                        if re.search(STRING, item):
+                            context.append(item)
     if not os.path.isfile(FILENAME):
         with open(FILENAME, 'w') as f:
             f.write(str(context))
@@ -143,9 +144,37 @@ def sentiment_tracker(STRING):
                 with open(page,'r') as f:
                     tree = etree.HTML(f.read())
                 for item in tree.iter('description'):
-                    if re.search(STRING,item.text.lower()):
-                        comments += item.text.lower()
+                    if item.text != None:
+                        if re.search(STRING,item.text.lower()):
+                            comments += item.text.lower()
             polarity = TextBlob(comments).sentiment.polarity
             if comments != "":
                 csv.write(year + ',' + mon + ',' + day + ',' + str(polarity) + '\n')
     logging.info(str(STRING) + '\'s counted')
+
+def top_tokens():
+    import ast
+    os.chdir(RCDIR)
+    for gram in ('1','2','3'):
+        filename = 'top' + gram + 'grams.csv'
+        with open(filename,'w') as f:
+            f.write('rank,count,proportion,token\n')
+        body = {}
+        total_tokens = 0.
+        for page in glob.glob(RCDIR + '/corpora/*/' + gram + 'gram.txt'):
+            with open(page, 'r') as f:
+                dictionary = ast.literal_eval(f.read())
+                for key in dictionary:
+                    total_tokens += dictionary.get(key)
+                    if body.has_key(key):
+                        body.update({key:body.get(key) + dictionary.get(key)})
+                    else:
+                        body.update({key:dictionary.get(key)})
+        body = [(body.get(key), body.get(key)/total_tokens, key) for key in body]
+        body = sorted(body, reverse=True)[:100]
+        with open(filename,'a') as f:
+            for ix, item in enumerate(body):
+                f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
+
+
+

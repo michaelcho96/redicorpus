@@ -68,7 +68,7 @@ def build_corpus(directory = RCDIR, date = NOW):
     # Builds unigram, bigram, and trigram count dictionaries from a set of xml
     # documents
     from lxml import etree
-    from nltk import util, word_tokenize, PorterStemmer
+    from nltk import ngrams, word_tokenize, PorterStemmer
     os.chdir(RCDIR + "/pages/" + date)
     comments = list()
     for filename in glob.glob('*.xml'):
@@ -81,7 +81,7 @@ def build_corpus(directory = RCDIR, date = NOW):
     logging.info('Comment number = ' + str(len(comments)))
     comments = ' '.join(comments)
     comments = comments.encode('ascii','ignore')
-    for i in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>'):
+    for i in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>','?','[',']'):
         comments = comments.replace(i,'')
     comments = comments.replace('&',' and ')
     try:
@@ -94,7 +94,7 @@ def build_corpus(directory = RCDIR, date = NOW):
     logging.info('Stem number = ' + str(len(stems)))
     for i in (1,2,3):
         logging.info('Making tokens for ' + str(i) + 'grams')
-        body = util.ngrams(stems, i)
+        body = list(ngrams(stems, i))
         logging.info(str(i) + 'gram number = ' + str(len(body)))
         dictionary = dict()
         while len(body) > 0:
@@ -177,5 +177,3 @@ if __name__ == "__main__":
     build_corpus(RCDIR, NOW)
     dailies(RCDIR, NOW)
     logging.info('Finished script')
-else:
-    logging.info('Script failed to initialize')
