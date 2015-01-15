@@ -74,8 +74,9 @@ def build_corpus(directory = RCDIR, date = NOW):
     for filename in glob.glob('*.xml'):
         with open(filename, 'r') as f:
             tree = etree.HTML(f.read())
-        for element in tree.iter('description'):
-            comments.append(element.text)
+        for item in tree.iter('item'):
+            for description in item.iter('description'):
+                comments.append(description.text)
     while comments.count(None) > 0:
         comments.remove(None)
     logging.info('Comment number = ' + str(len(comments)))

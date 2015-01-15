@@ -13,13 +13,12 @@ import re
 import os
 import glob
 import logging
-#RCDIR = os.environ.get('RCDIR')
-RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
+RCDIR = os.environ.get('RCDIR')
 logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
 
 def token_tracker(TOKEN):
-    # Expects TOKEN to be a tuple of strings with length of 1, 2, or 3
-    # For example, to search for 'foo', enter TOKEN = ('foo',)
+    # Expects TOKEN to be a string with 1, 2, or 3 words, separated by
+    # whitespace.
     import ast
     if type(TOKEN) != str:
         raise TypeError('TOKEN is not a string')
@@ -175,6 +174,72 @@ def top_tokens():
         with open(filename,'a') as f:
             for ix, item in enumerate(body):
                 f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
+
+def nltk_collocation_wrapper():
+    import nltk
+    from nltk.collocations import BigramCollocationFinder, BigramAssocMeasures
+    from lxml import etree
+    os.chdir(RCDIR)
+    comments = list()
+    for filename in glob.glob('pages/*/*.xml'):
+        with open(filename, 'r') as f:
+            tree = etree.HTML(f.read())
+        for element in tree.iter('description'):
+            comments.append(element.text)
+    while comments.count(None) > 0:
+        comments.remove(None)
+    comments = ' '.join(comments)
+    comments = nltk.wordpunct_tokenize(comments)
+    finder = BigramCollocationFinder.from_words(comments)
+    finder.apply_freq_filter(3)
+    collocations = finder.nbest(nltk.collocations.BigramAssocMeasures().pmi,1000)
+    with open('collocations.txt','w') as f:
+        f.write(str(collocations))
+    return collocations[:10]
+
+def probability_mapper(TOKEN):
+    from lxml import etree
+    from nltk import wordpunct_tokenize, ngrams, PorterStemmer
+    if type(TOKEN) == str:
+        TOKEN = TOKEN.lower()
+    else:
+        raise TypeError
+    try:
+        os.makedirs(RCDIR + "/maps/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/maps/"):
+            raise
+    os.chdir(RCDIR)
+    comments = list()
+    ngram_list = list()
+    comment_map = dict()
+    for filename in glob.glob('pages/*/*.xml'):
+        with open(filename, 'r') as f:
+            tree = etree.HTML(f.read())
+        for item in tree.iter('item'):
+            for description in item.iter('description'):
+                if type(description.text) == str and len(description.text) > 0:
+                    comment = description.text.lower()
+                    comment = comment.replace('quot','"')
+                    if re.search(TOKEN,comment):
+                        comment = comment.replace(TOKEN, '', 1)
+                        comments.append(comment)
+    comment_count = float(len(comments))
+    for comment in comments:
+        comment = [PorterStemmer().stem(word) for word in wordpunct_tokenize(comment)]
+        for i in (1,2,3):
+            for gram in ngrams(comment,i):
+                ngram_list.append(gram)
+    while len(ngram_list) > 0:
+        gram = ' '.join(ngram_list.pop())
+        if comment_map.has_key(gram):
+            comment_map.update({gram:comment_map.get(gram) + 1})
+        else:
+            comment_map.update({gram:1})
+    probability_map = sorted([(value/comment_count,key) for key, value in comment_map.items()], reverse = True)
+    with open("maps/" + TOKEN + "_map.txt",'w') as f:
+        f.write(str(probability_map))
+    return probability_map[:10]
 
 
 
