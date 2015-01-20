@@ -20,6 +20,7 @@ def token_tracker(TOKEN):
     # Expects TOKEN to be a string with 1, 2, or 3 words, separated by
     # whitespace.
     import ast
+    from nltk import PorterStemmer
     if type(TOKEN) != str:
         raise TypeError('TOKEN is not a string')
     GRAM = len(TOKEN.split(' '))
@@ -27,6 +28,7 @@ def token_tracker(TOKEN):
         raise ValueError('Length of TOKEN is less than one')
     if GRAM > 3:
         raise ValueError('Length of TOKEN is greater than three')
+    TOKEN = ' '.join([PorterStemmer().stem(item) for item in TOKEN.split(' ')])
     os.chdir(RCDIR)
     logging.info('Starting token counter')
     logging.debug(RCDIR)
@@ -191,13 +193,13 @@ def nltk_collocation_wrapper():
     comments = ' '.join(comments)
     comments = nltk.wordpunct_tokenize(comments)
     finder = BigramCollocationFinder.from_words(comments)
-    finder.apply_freq_filter(3)
+    finder.apply_freq_filter(10)
     collocations = finder.nbest(nltk.collocations.BigramAssocMeasures().pmi,1000)
     with open('collocations.txt','w') as f:
         f.write(str(collocations))
     return collocations[:10]
 
-def probability_mapper(TOKEN):
+def comment_mapper(TOKEN):
     from lxml import etree
     from nltk import wordpunct_tokenize, ngrams, PorterStemmer
     if type(TOKEN) == str:
@@ -237,9 +239,71 @@ def probability_mapper(TOKEN):
         else:
             comment_map.update({gram:1})
     probability_map = sorted([(value/comment_count,key) for key, value in comment_map.items()], reverse = True)
-    with open("maps/" + TOKEN + "_map.txt",'w') as f:
+    with open("maps/" + TOKEN + "_commap.txt",'w') as f:
         f.write(str(probability_map))
     return probability_map[:10]
 
+def position_mapper(TOKEN):
+    from lxml import etree
+    from nltk import wordpunct_tokenize, PorterStemmer
+    if type(TOKEN) == str:
+        TOKEN = TOKEN.lower()
+    else:
+        raise TypeError
+    try:
+        os.makedirs(RCDIR + "/maps/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/maps/"):
+            raise
+    os.chdir(RCDIR)
+    negative_two = list()
+    negative_one = list()
+    positive_one = list()
+    positive_two = list()
+    for filename in glob.glob('pages/*/*.xml'):
+        with open(filename, 'r') as f:
+            tree = etree.HTML(f.read())
+        for item in tree.iter('item'):
+            for description in item.iter('description'):
+                if type(description.text) == str and len(description.text) > 0:
+                    comment = description.text.lower()
+                    comment = comment.replace('quot','"')
+                    if re.search(TOKEN,comment):
+                        comment = wordpunct_tokenize(comment)
+                        try:
+                            ix = comment.index(TOKEN)
+                            if ix > 1:
+                                negative_two.append(comment[ix-2])
+                            if ix > 0:
+                                negative_one.append(comment[ix-1])
+                            if len(comment) - ix > 1:
+                                positive_one.append(comment[ix+1])
+                            if len(comment) - ix > 2:
+                                positive_two.append(comment[ix+2])
+                        except ValueError:
+                            pass
+    negative_two = sorted([(negative_two.count(item)/float(len(negative_two)), item) for item in set(negative_two)], reverse = True)
+    negative_one = sorted([(negative_one.count(item)/float(len(negative_one)), item) for item in set(negative_one)], reverse = True)
+    positive_one = sorted([(positive_one.count(item)/float(len(positive_one)), item) for item in set(positive_one)], reverse = True)
+    positive_two = sorted([(positive_two.count(item)/float(len(positive_two)), item) for item in set(positive_two)], reverse = True)
+    file_content = str({-2:negative_two,-1:negative_one,1:positive_one,2:positive_two})
+    with open('maps/' + TOKEN + '_posmap.txt','w') as f:
+        f.write(file_content)
+    return negative_two[0], negative_one[0], positive_one[0], positive_two[0]
 
-
+def top_links():
+    from lxml import etree
+    os.chdir(RCDIR)
+    link_list = []
+    for filename in glob.glob('pages/*/*.xml'):
+        with open(filename, 'r') as f:
+            tree = etree.HTML(f.read())
+        for item in tree.iter('item'):
+            for description in item.iter('description'):
+                if type(description.text) == str and len(description.text) > 0:
+                    comment = description.text.lower()
+                    link_list.extend(re.findall(r'http[s]{0,1}://[a-z0-9./=?-_%&!+#]*',comment))
+    top_links = sorted([(link_list.count(item), item) for item in set(link_list)], reverse = True)
+    with open('top_links.txt','w') as f:
+        f.write(str(top_links))
+    return top_links[:10]
