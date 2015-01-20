@@ -303,7 +303,7 @@ def top_links():
             for description in item.iter('description'):
                 if type(description.text) == str and len(description.text) > 0:
                     comment = description.text
-                    for regex in (re.compile(r'[\w.:/]+\.com[a-zA-Z0-9!#$%&_=+/?-]*'),re.compile(r'[\w.:/]+\.com[a-zA-Z0-9!#$%&_=+/?-]*'),re.compile(r'[\w.:/]*youtu\.be[a-zA-Z0-9!#$%&_=+/?-]*')):
+                    for regex in (re.compile(r'[\w.:/]+\.com[a-zA-Z0-9!#$%&_=+/.?-]*'),re.compile(r'[\w.:/]+\.com[a-zA-Z0-9!#$%&_=+/?-]*'),re.compile(r'[\w.:/]*youtu\.be[a-zA-Z0-9!#$%&_=+/?-]*')):
                         link_list.extend(regex.findall(comment))
     top_links = sorted([(link_list.count(item), item) for item in set(link_list)], reverse = True)
     with open('top_links.txt','w') as f:
