@@ -205,6 +205,7 @@ def comment_mapper(TOKEN):
     from nltk import wordpunct_tokenize, ngrams, PorterStemmer
     if type(TOKEN) == str:
         TOKEN = TOKEN.lower()
+        TOKEN = ' '.join([PorterStemmer().stem(item) for item in TOKEN.split(' ')])
     else:
         raise TypeError
     try:
@@ -249,6 +250,7 @@ def position_mapper(TOKEN):
     from nltk import wordpunct_tokenize, PorterStemmer
     if type(TOKEN) == str:
         TOKEN = TOKEN.lower()
+        TOKEN = ' '.join([PorterStemmer().stem(item) for item in TOKEN.split(' ')])
     else:
         raise TypeError
     try:
