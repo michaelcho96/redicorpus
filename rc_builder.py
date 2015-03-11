@@ -14,6 +14,8 @@ import os
 import glob
 import logging
 
+#
+
 RCDIR = os.environ.get('RCDIR')
 NOW = time.strftime("%Y_%m_%d")
 logging.basicConfig(filename = RCDIR + '/rc_builder.log', level = logging.INFO, format = '%(asctime)s %(message)s')
