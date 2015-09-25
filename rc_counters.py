@@ -13,8 +13,7 @@ import re
 import os
 import glob
 import logging
-RCDIR = os.environ.get('RCDIR')
-#RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
+RCDIR = os.getenv('HOME') + '/rc_static'
 logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
 
 def token_tracker(TOKEN):
@@ -30,6 +29,42 @@ def token_tracker(TOKEN):
     if GRAM > 3:
         raise ValueError('Length of TOKEN is greater than three')
     TOKEN = ' '.join([PorterStemmer().stem(item) for item in TOKEN.split(' ')])
+    os.chdir(RCDIR)
+    logging.info('Starting token counter')
+    logging.debug(RCDIR)
+    try:
+        os.makedirs(RCDIR + "/trackers/")
+    except OSError:
+        if not os.path.isdir(RCDIR + "/trackers/"):
+            raise
+    FILENAME = RCDIR + '/trackers/token_'+ str(TOKEN) + '.csv'
+    logging.debug(FILENAME)
+    with open(FILENAME, 'w') as csv:
+        csv.write('year,mon,mday,count\n')
+        for path in glob.glob(RCDIR + '/corpora/*/' + str(GRAM) + 'gram.txt'):
+            logging.debug(path)
+            date = re.search('[0-9_]{10}',path).group()
+            year = date[0:4]
+            mon = date[5:7]
+            day = date[8:10]
+            with open(path,'r') as f:
+                dictionary = ast.literal_eval(f.read())
+            if type(dictionary) == dict:
+                if dictionary.has_key(TOKEN):
+                    csv.write(year + ',' + mon + ',' + day + ',' + str(dictionary.get(TOKEN)) + '\n')
+                else:
+                    csv.write(year + ',' + mon + ',' + day + ',' + '0' + '\n')
+            else:
+                pass
+    logging.info(str(TOKEN) + '\'s counted')
+
+def token_tracker_2(TOKEN):
+    # Expects TOKEN to be pre-stemmed
+    import ast
+    from nltk import PorterStemmer
+    if type(TOKEN) != str:
+        raise TypeError('TOKEN is not a string')
+    GRAM = len(TOKEN.split(' '))
     os.chdir(RCDIR)
     logging.info('Starting token counter')
     logging.debug(RCDIR)
@@ -169,7 +204,7 @@ def sentiment_tracker(STRING):
             raise
     FILENAME = RCDIR + '/sentiment/'+ STRING.replace(' ','_') + '.csv'
     logging.debug(FILENAME)
-    STRING = STRING.lower()       
+    STRING = STRING.lower()
     with open(FILENAME, 'w') as csv:
         csv.write('year,mon,mday,polarity\n')
         for path in glob.glob(RCDIR + '/pages/*/'):
@@ -193,9 +228,9 @@ def sentiment_tracker(STRING):
 
 def top_tokens():
     import ast
+    import json
     os.chdir(RCDIR)
-    for gram in ('2','3'):
-    #for gram in ('1','2','3'):
+    for gram in ('1','2','3'):
         filename = 'top' + gram + 'grams.csv'
         with open(filename,'w') as f:
             f.write('rank,count,proportion,token\n')
@@ -211,8 +246,8 @@ def top_tokens():
                     else:
                         body.update({key:dictionary.get(key)})
         body = {key:value/total_tokens for key, value in body.items()}
-        with open('total' + str(gram) + 'grams.txt', 'w') as f:
-            f.write(str(body))
+        with open('total' + str(gram) + 'grams.json', 'w') as f:
+            json.dump(body,f)
         body = [(body.get(key)*total_tokens, body.get(key), key) for key in body]
         body = sorted(body, reverse=True)[:100]
         with open(filename,'a') as f:
@@ -400,81 +435,6 @@ def top_links():
         f.write(str(top_links))
     return top_links[:10]
 
-def chisq_test(token):
-    """
-    CHISQ
-    """
-    from ast import literal_eval
-    from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
-    if type(token) != str:
-        raise TypeError
-    else:
-        token = token.lower()
-        token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
-    filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
-    with open(filename,'r') as f:
-        word_map = literal_eval(f.read())
-    body_length = sum(word_map.values())
-    filename = 'total1grams.txt'
-    with open(filename, 'r') as f:
-        total_probs = literal_eval(f.read())
-    for key in total_probs.keys():
-        if total_probs.get(key) > 0: #8.782069031400928e-09:
-            if word_map.has_key(key):
-                chi_square_element = ((float(word_map.get(key)) - total_probs.get(key)*body_length)**2) / (total_probs.get(key)*body_length)
-            else:
-                chi_square_element = ((0. - total_probs.get(key)*body_length)**2) / (total_probs.get(key)*body_length)
-            chi_square_list.append(chi_square_element)
-    chi_square_total = sum(sorted(chi_square_list, reverse=True))
-    return chi_square_total, body_length
-
-def chisq_control(p,n=10):
-    from ast import literal_eval
-    from numpy import random
-    from lxml import etree
-    from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
-    n_total = []
-    with open('total1grams.txt','r') as f:
-        total_probs = literal_eval(f.read())
-    for i in range(0,n):
-        comments = []
-        chi_square_total = 0.
-        n_comments = 0
-        body = {}
-        for page in glob.glob(RCDIR + '/pages/*/*.xml'):
-            with open(page, 'r') as f:
-                tree = etree.HTML(f.read())
-            for description in tree.iter('description'):
-                if description.text != None:
-                    if random.binomial(1,p) == 1:
-                        n_comments += 1
-                        comments.append(description.text.lower())
-        comments = ' '.join(comments)
-        for punctuation in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>','?','[',']'):
-            comments = comments.replace(punctuation,'')
-        comments = comments.replace('&',' and ')
-        stemmed_words = [PorterStemmer().stem(word) for word in wordpunct_tokenize(comments)]
-        while len(stemmed_words) > 0:
-            word = stemmed_words.pop()
-            if word in body:
-                body.update({word:body.get(word)+1})
-            else:
-                body.update({word:1})
-        body_length = sum(body.values())
-        if body_length == 0:
-            body_length += 1
-        for key in total_probs.keys():
-            if total_probs.get(key) > 0: #8.782069031400928e-09:
-                if key in body:
-                    chi_square_total += ((float(body.get(key)) - total_probs.get(key)*body_length)**2)/(total_probs.get(key)*body_length)
-                else:
-                    chi_square_total += ((0. - total_probs.get(key)*body_length)**2)/(total_probs.get(key)*body_length)
-        chi_square_list.append(chi_square_total)
-        n_total.append(n_comments)
-    return sum(chi_square_list)/len(chi_square_list), sum(n_total)/len(n_total)
-
 def rmse_test(token):
     """RMSE"""
     from ast import literal_eval
@@ -548,86 +508,7 @@ def rmse_control(p,n=10):
         n_total.append(n_comments)
     return sum(chi_square_list)/len(chi_square_list), sum(n_total)/len(n_total)
 
-def chisq_test_2(token):
-    """
-    Corrected CHISQ
-    """
-    from ast import literal_eval
-    from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
-    if type(token) != str:
-        raise TypeError
-    else:
-        token = token.lower()
-        token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
-    filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
-    with open(filename,'r') as f:
-        word_map = literal_eval(f.read())
-    body_length = sum(word_map.values())
-    filename = 'total1grams.txt'
-    with open(filename, 'r') as f:
-        total_probs = literal_eval(f.read())
-    for key in word_map.keys():
-        if word_map.get(key) > 0: #8.782069031400928e-09:
-            if key in total_probs:
-                chi_square_element = ((float(word_map.get(key)) - total_probs.get(key)*body_length)**2) / (total_probs.get(key)*body_length)
-            else:
-                chi_square_element = 0
-            chi_square_list.append(chi_square_element)
-    chi_square_total = sum(sorted(chi_square_list, reverse=True))
-    return chi_square_total, len(word_map.keys()), body_length
-
-def chisq_control_2(p,n=10):
-    from ast import literal_eval
-    from numpy import random
-    from lxml import etree
-    from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
-    n_total = []
-    keys_list = []
-    size_list = []
-    with open('total1grams.txt','r') as f:
-        total_probs = literal_eval(f.read())
-    for i in range(0,n):
-        comments = []
-        chi_square_total = 0.
-        n_comments = 0
-        body = {}
-        for page in glob.glob(RCDIR + '/pages/*/*.xml'):
-            with open(page, 'r') as f:
-                tree = etree.HTML(f.read())
-            for description in tree.iter('description'):
-                if description.text != None:
-                    if random.binomial(1,p) == 1:
-                        n_comments += 1
-                        comments.append(description.text.lower())
-        comments = ' '.join(comments)
-        for punctuation in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>','?','[',']'):
-            comments = comments.replace(punctuation,'')
-        comments = comments.replace('&',' and ')
-        stemmed_words = [PorterStemmer().stem(word) for word in wordpunct_tokenize(comments)]
-        while len(stemmed_words) > 0:
-            word = stemmed_words.pop()
-            if word in body:
-                body.update({word:body.get(word)+1})
-            else:
-                body.update({word:1})
-        body_length = sum(body.values())
-        if body_length == 0:
-            body_length += 1
-        for key in body.keys():
-            if body.get(key) > 0: #8.782069031400928e-09:
-                if key in total_probs:
-                    chi_square_total += ((float(body.get(key)) - total_probs.get(key)*body_length)**2)/(total_probs.get(key)*body_length)
-                else:
-                    chi_square_total += 0
-        chi_square_list.append(chi_square_total)
-        n_total.append(n_comments)
-        keys_list.append(len(body.keys()))
-        size_list.append(body_length)
-    return sum(chi_square_list)/len(chi_square_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
-
-def chisq_test_3(token):
+def chisq_test(token):
     """
     CHISQ
     """
@@ -656,7 +537,7 @@ def chisq_test_3(token):
     chi_square_total = sum(sorted(chi_square_list, reverse=True))
     return chi_square_total, len(word_map.keys()), body_length
 
-def chisq_control_3(p,n=10):
+def chisq_control(p,n=10):
     from ast import literal_eval
     from numpy import random
     from lxml import etree
@@ -705,5 +586,3 @@ def chisq_control_3(p,n=10):
         keys_list.append(len(body.keys()))
         size_list.append(body_length)
     return sum(chi_square_list)/len(chi_square_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
-
-        
