@@ -586,3 +586,37 @@ def chisq_control(p,n=10):
         keys_list.append(len(body.keys()))
         size_list.append(body_length)
     return sum(chi_square_list)/len(chi_square_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
+
+def cosine_test(token):
+    """ """
+    from ast import literal_eval
+    from nltk import wordpunct_tokenize, PorterStemmer
+    import numpy as np
+    vector1 = []
+    vector2 = []
+    if type(token) != str:
+        raise TypeError
+    else:
+        token = token.lower()
+        token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
+    filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
+    with open(filename,'r') as f:
+        word_map = literal_eval(f.read())
+    body_length = sum(word_map.values())
+    filename = 'total1grams.txt'
+    with open(filename, 'r') as f:
+        total_probs = literal_eval(f.read())
+    for key in total_probs.keys():
+        if total_probs.get(key) > 0:
+            vector1.append(total_probs.get(key))
+            if key in word_map:
+                vector2.append(word_map.get(key))
+            else:
+                vector2.append(0)
+    vector1 = np.array(vector1)
+    vector2 = np.array(vector2)
+    cosine_value = sum(vector1 * vector2) / (sum(vector1**2) * sum(vector2**2)) ** .5
+    return cosine_value, len(word_map.keys()), body_length
+
+def cosine_control():
+    """ """
