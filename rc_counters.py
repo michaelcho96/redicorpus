@@ -641,7 +641,7 @@ def cosine_control(p,n=10):
                 tree = etree.HTML(f.read())
             for description in tree.iter('description'):
                 if description.text != None:
-                    if random.binomial(1,p) == 1:
+                    if np.random.binomial(1,p) == 1:
                         n_comments += 1
                         comments.append(description.text.lower())
         comments = ' '.join(comments)
