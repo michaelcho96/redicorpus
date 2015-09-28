@@ -618,5 +618,58 @@ def cosine_test(token):
     cosine_value = sum(vector1 * vector2) / (sum(vector1**2) * sum(vector2**2)) ** .5
     return cosine_value, len(word_map.keys()), body_length
 
-def cosine_control():
+def cosine_control(p,n=10):
     """ """
+    from ast import literal_eval
+    from nltk import wordpunct_tokenize, PorterStemmer
+    from lxml import etree
+    import numpy as np
+    cosine_list = []
+    n_total = []
+    keys_list = []
+    size_list = []
+    with open('total1grams.txt','r') as f:
+        total_probs = literal_eval(f.read())
+    for i in range(0,n):
+        comments = []
+        vector1 = []
+        vector2 = []
+        n_comments = 0
+        body = {}
+        for page in glob.glob(RCDIR + '/pages/*/*.xml'):
+            with open(page, 'r') as f:
+                tree = etree.HTML(f.read())
+            for description in tree.iter('description'):
+                if description.text != None:
+                    if random.binomial(1,p) == 1:
+                        n_comments += 1
+                        comments.append(description.text.lower())
+        comments = ' '.join(comments)
+        for punctuation in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>','?','[',']'):
+            comments = comments.replace(punctuation,'')
+        comments = comments.replace('&',' and ')
+        stemmed_words = [PorterStemmer().stem(word) for word in wordpunct_tokenize(comments)]
+        while len(stemmed_words) > 0:
+            word = stemmed_words.pop()
+            if word in body:
+                body.update({word:body.get(word)+1})
+            else:
+                body.update({word:1})
+        body_length = sum(body.values())
+        if body_length == 0:
+            body_length += 1
+        for key in total_probs.keys():
+            if total_probs.get(key) > 0: #8.782069031400928e-09:
+                vector1.append(total_probs.get(key))
+                if key in body:
+                    vector2.append(body.get(key))
+                else:
+                    vector2.append(0)
+        vector1 = np.array(vector1)
+        vector2 = np.array(vector2)
+        cosine_value = sum(vector1 * vector2) / (sum(vector1**2) * sum(vector2**2)) ** .5
+        cosine_list.append(cosine_value)
+        n_total.append(n_comments)
+        keys_list.append(len(body.keys()))
+        size_list.append(body_length)
+    return sum(cosine_list)/len(cosine_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
