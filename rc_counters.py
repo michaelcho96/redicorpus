@@ -439,41 +439,44 @@ def rmse_test(token):
     """RMSE"""
     from ast import literal_eval
     from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
+    error_list = []
     if type(token) != str:
         raise TypeError
-    else:
-        token = token.lower()
-        token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
+    # else:
+    #     token = token.lower()
+    #     token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
     filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
     with open(filename,'r') as f:
         word_map = literal_eval(f.read())
     body_length = sum(word_map.values())
+    key_length = len(word_map)
     filename = 'total1grams.txt'
     with open(filename, 'r') as f:
         total_probs = literal_eval(f.read())
     for key in word_map.keys():
         if word_map.get(key) > 0: #8.782069031400928e-09:
-            if total_probs.has_key(key):
-                chi_square_element = ((float(word_map.get(key)) - total_probs.get(key)*body_length)**2) / (len(word_map.keys()))
+            if key in total_probs:
+                error = (float(word_map.get(key)) - total_probs.get(key)*body_length)**2
             else:
-                chi_square_element = ((float(word_map.get(key)))**2) / (len(word_map.keys()))
-            chi_square_list.append(chi_square_element)
-    chi_square_total = sum(sorted(chi_square_list, reverse=True))
-    return chi_square_total**0.5, body_length
+                error = float(word_map.get(key))**2
+            error_list.append(error)
+    rmse = (sum(error_list)/key_length)**.5
+    return rmse, key_length, body_length
 
 def rmse_control(p,n=10):
     from ast import literal_eval
     from numpy import random
     from lxml import etree
     from nltk import wordpunct_tokenize, PorterStemmer
-    chi_square_list = []
+    rmse_list = []
     n_total = []
+    keys_list = []
+    size_list = []
     with open('total1grams.txt','r') as f:
         total_probs = literal_eval(f.read())
     for i in range(0,n):
         comments = []
-        chi_square_total = 0.
+        error_list = []
         n_comments = 0
         body = {}
         for page in glob.glob(RCDIR + '/pages/*/*.xml'):
@@ -496,17 +499,21 @@ def rmse_control(p,n=10):
             else:
                 body.update({word:1})
         body_length = sum(body.values())
+        key_length = len(body)
         if body_length == 0:
             body_length += 1
         for key in body.keys():
             if body.get(key) > 0: #8.782069031400928e-09:
                 if key in total_probs:
-                    chi_square_total += ((float(body.get(key)) - total_probs.get(key)*body_length)**2)/(len(body.keys()))
+                    error = (float(body.get(key)) - total_probs.get(key)*body_length)**2
                 else:
-                    chi_square_total += ((float(body.get(key)))**2)/(len(body.keys()))
-        chi_square_list.append(chi_square_total**0.5)
+                    error = float(body.get(key))**2
+                error_list.append(error)
+        rmse_list.append((sum(error_list)/key_length)**.5)
         n_total.append(n_comments)
-    return sum(chi_square_list)/len(chi_square_list), sum(n_total)/len(n_total)
+        keys_list.append(key_length)
+        size_list.append(body_length)
+    return sum(rmse_list)/len(rmse_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
 
 def chisq_test(token):
     """
@@ -596,9 +603,9 @@ def cosine_test(token):
     vector2 = []
     if type(token) != str:
         raise TypeError
-    else:
-        token = token.lower()
-        token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
+    # else:
+    #     token = token.lower()
+    #     token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
     filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
     with open(filename,'r') as f:
         word_map = literal_eval(f.read())
