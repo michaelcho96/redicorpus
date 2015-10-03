@@ -127,7 +127,7 @@ if __name__ == "__main__":
     logging.info('Starting askreddit getter')
     get_listing(date = NOW, depth = 4)
     for document in mongo.askreddit.listing.find():
-        page = get_page(id36)
+        page = get_page(document['_id'])
         a = write_page(page)
         b = traverse_comments(page[1]['data']['children'])
         if a and b:
