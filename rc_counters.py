@@ -454,15 +454,17 @@ def rmse_test(token):
     filename = 'total1grams.txt'
     with open(filename, 'r') as f:
         total_probs = literal_eval(f.read())
-    for key in word_map.keys():
-        if word_map.get(key) > 0: #8.782069031400928e-09:
+    if key_length > 0:
+        for key in word_map.keys():
             if key in total_probs:
                 error = (float(word_map.get(key)) - total_probs.get(key)*body_length)**2
             else:
                 error = float(word_map.get(key))**2
             error_list.append(error)
-    rmse = (sum(error_list)/key_length)**.5
-    return rmse, key_length, body_length
+        rmse = (sum(error_list)/key_length)**.5
+        return rmse, key_length, body_length
+    else:
+        return None, None, None
 
 def rmse_control(p,n=10):
     from ast import literal_eval
