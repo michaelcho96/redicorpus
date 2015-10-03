@@ -19,10 +19,12 @@ if __name__ == '__main__':
     for database in mongo.database_names():
         for collection in database.collection_names():
             if collection.comments.findOne({'counted':0}):
+                i = 0
                 for document in collection.comments.find({'counted':0}):
-                    #do rc.body.build 
-                    collection.comments.update_one({'_id':document['_id']},
+                    #r = do rc.body.build
+                    if r:
+                        i += 1
+                        collection.comments.update_one({'_id':document['_id']},
                                                     '$inc' : {'counted' : 1})
-
-    logging.ingo("Daemon entered {} comments".format(i))
+    logging.ingo("Daemon entered {} comments".format(str(i)))
     mongo.close()
