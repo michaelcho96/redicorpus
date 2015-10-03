@@ -16,9 +16,13 @@ logging.basicConfig(filename = RCDIR + '/redicorpus.log', level = logging.INFO, 
 
 if __name__ == '__main__':
     logging.info("Daemon respawned")
-    for collection in ###:
-        if collection.comments.findOne():
-            for document in collection.commends.find():
-                
+    for database in mongo.database_names():
+        for collection in database.collection_names():
+            if collection.comments.findOne({'counted':0}):
+                for document in collection.comments.find({'counted':0}):
+                    #do rc.body.build 
+                    collection.comments.update_one({'_id':document['_id']},
+                                                    '$inc' : {'counted' : 1})
+
     logging.ingo("Daemon entered {} comments".format(i))
     mongo.close()

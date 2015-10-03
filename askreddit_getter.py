@@ -77,17 +77,13 @@ def insert_comment(item):
     date : datetime.datetime.fromtimestamp(item['created_utc']),
     thread_id : re.search(r'[a-zA-Z0-9]+$',item['link_id']).group(),
     parent_id : re.search(r'[a-zA-Z0-9]+$',item['parent_id']).group(),
-    child_id : []
+    child_id : [],
+    counted : 0
     author : item['author'],
     polarity : item['controversiality'],
-    strings : {'counted':0
-        'data':word_tokenize(item['body'])},
-    stems : {'counted':0,
-        'data':[snowball.stem(token) for token in word_tokenize(item['body'])]
-        },
-    lemmas : {
-        'counted':0
-        'data':[wordnet.lemmatize(token) for token in word_tokenize(item['body'])]}
+    strings : word_tokenize(item['body']),
+    stems : [snowball.stem(token) for token in word_tokenize(item['body'])],
+    lemmas : [wordnet.lemmatize(token) for token in word_tokenize(item['body'])]
     }
     return mongo.reddit.comments.insert(document)
 
