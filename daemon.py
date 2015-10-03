@@ -26,5 +26,5 @@ if __name__ == '__main__':
                         i += 1
                         collection.comments.update_one({'_id':document['_id']},
                                                     '$inc' : {'counted' : 1})
-    logging.ingo("Daemon entered {} comments".format(str(i)))
+    logging.info("Daemon entered {} comments".format(str(i)))
     mongo.close()
