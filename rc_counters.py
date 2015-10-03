@@ -13,6 +13,7 @@ import re
 import os
 import glob
 import logging
+import math
 RCDIR = os.getenv('HOME') + '/rc_static'
 logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
 
@@ -680,3 +681,74 @@ def cosine_control(p,n=10):
         keys_list.append(len(body.keys()))
         size_list.append(body_length)
     return sum(cosine_list)/len(cosine_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
+
+def shannon_test(token):
+    """entropy"""
+    from ast import literal_eval
+    from nltk import wordpunct_tokenize, PorterStemmer
+    entropy_list = []
+    if type(token) != str:
+        raise TypeError
+    # else:
+    #     token = token.lower()
+    #     token = ' '.join([PorterStemmer().stem(item) for item in token.split(' ')])
+    filename = 'maps/' + token.replace(' ','_') + '_wordmap.txt'
+    with open(filename,'r') as f:
+        word_map = literal_eval(f.read())
+    body_length = sum(word_map.values())
+    key_length = len(word_map)
+    for key in word_map.keys():
+        p = word_map.get(key)/float(body_length)
+        if p > 0: #8.782069031400928e-09:
+            entropy_list.append(p * math.log2(p))
+    shannon = -1 * sum(entropy_list)
+    return shannon, key_length, body_length
+
+def shannon_control(p,n=10):
+    from ast import literal_eval
+    from numpy import random
+    from lxml import etree
+    from nltk import wordpunct_tokenize, PorterStemmer
+    shannon_list = []
+    n_total = []
+    keys_list = []
+    size_list = []
+    with open('total1grams.txt','r') as f:
+        total_probs = literal_eval(f.read())
+    for i in range(0,n):
+        comments = []
+        entropy_list = []
+        n_comments = 0
+        body = {}
+        for page in glob.glob(RCDIR + '/pages/*/*.xml'):
+            with open(page, 'r') as f:
+                tree = etree.HTML(f.read())
+            for description in tree.iter('description'):
+                if description.text != None:
+                    if random.binomial(1,p) == 1:
+                        n_comments += 1
+                        comments.append(description.text.lower())
+        comments = ' '.join(comments)
+        for punctuation in (',','.',':',';','"','*',"'",'~','|','!','quot','<','>','?','[',']'):
+            comments = comments.replace(punctuation,'')
+        comments = comments.replace('&',' and ')
+        stemmed_words = [PorterStemmer().stem(word) for word in wordpunct_tokenize(comments)]
+        while len(stemmed_words) > 0:
+            word = stemmed_words.pop()
+            if word in body:
+                body.update({word:body.get(word)+1})
+            else:
+                body.update({word:1})
+        body_length = sum(body.values())
+        key_length = len(body)
+        if body_length == 0:
+            body_length += 1
+        for key in body.keys():
+            p = body.get(key)/float(body_length)
+            if body.get(key) > 0: #8.782069031400928e-09:
+                entropy_list.append(p * math.log2(p))
+        shannon_list.append(-1 * sum(entropy_list))
+        n_total.append(n_comments)
+        keys_list.append(key_length)
+        size_list.append(body_length)
+    return sum(shannon_list)/len(shannon_list), sum(keys_list)/len(keys_list), sum(size_list)/len(size_list), sum(n_total)/len(n_total)
