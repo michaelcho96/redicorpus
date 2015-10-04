@@ -77,7 +77,7 @@ def insert_comment(item):
     'polarity' : {user : item['controversiality']},
     'raw' : raw
     })
-    return comment.insert()
+    return comment.insert.apply_async(queue='comments')
 
 def traverse_comments(level):
     """Traverse comment hierarchies depth-first"""

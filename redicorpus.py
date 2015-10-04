@@ -11,6 +11,7 @@ from nltk import ngrams, snowball, wordnet, word_tokenize
 import os
 import pymongo
 import re
+from redicorpus.celery import app
 import requests
 import yaml
 
@@ -39,10 +40,14 @@ class comment(dict):
         else:
             raise TypeError
 
+    @app.task
     def insert(self):
         collection = pymongo.collection.Collection(self['source'], 'comments')
-        collection.insert_one(self)
+        result = collection.insert_one(self)
+        if result.inserted_count == 1:
+            self.count.apply_async(queue='counts')
 
+    @app.task
     def count(self, grams=(1,2,3)):
         database = self['source']
         for i in grams:
