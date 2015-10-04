@@ -702,7 +702,7 @@ def shannon_test(token):
     for key in word_map.keys():
         p = word_map.get(key)/float(body_length)
         if p > 0: #8.782069031400928e-09:
-            entropy_list.append(p * math.log2(p))
+            entropy_list.append(p * math.log(p,2))
     shannon = -1 * sum(entropy_list)
     return shannon, key_length, body_length
 
@@ -748,7 +748,7 @@ def shannon_control(p,n=10):
         for key in body.keys():
             p = body.get(key)/float(body_length)
             if body.get(key) > 0: #8.782069031400928e-09:
-                entropy_list.append(p * math.log2(p))
+                entropy_list.append(p * math.log(p,2))
         shannon_list.append(-1 * sum(entropy_list))
         n_total.append(n_comments)
         keys_list.append(key_length)
