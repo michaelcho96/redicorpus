@@ -21,7 +21,7 @@ if __name__ == '__main__':
             if collection.comments.findOne({'counted':0}):
                 i = 0
                 for document in collection.comments.find({'counted':0}):
-                    #r = do rc.body.build
+                    #r = rc.comment(document).count()
                     if r:
                         i += 1
                         collection.comments.update_one({'_id':document['_id']},

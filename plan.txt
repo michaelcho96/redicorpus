@@ -13,12 +13,9 @@ replies are contained in page[1]['data']['children'][i]['data']['replies']['data
 
 # count data indexed by date, token, length (also include ids)
 
-db.askreddit.stringsCount
-db.askreddit.stemsCount
-db.askreddit.lemmasCount
-db.askreddit.stringsActivation
-db.askreddit.stemsActivation
-db.askreddit.lemmasActivation
+db.askreddit.strings
+db.askreddit.stems
+db.askreddit.lemmas
 
 # map data indexed by token, length, and type
 

@@ -23,7 +23,7 @@ mongo = MongoClient()
 #RCDIR = os.environ.get('RCDIR')
 RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
 os.chdir(RCDIR)
-logging.basicConfig(filename = RCDIR + '/redicorpus.log', level = logging.INFO, format = '%(asctime)s %(message)s')
+logging.basicConfig(filename = RCDIR + '/etc/askreddit.log', level = logging.INFO, format = '%(asctime)s %(message)s')
 
 def authorize():
     """Oauth for reddit.com"""
@@ -70,22 +70,22 @@ def get_page(id36, comment_id=None):
 
 def insert_comment(item):
     """Pull info out of raw data and insert to job collection"""
-    item = item['data']
-    document = rc.comment{
+    raw = item['body'].lower()
+    links = []
+    for match in re.finditer(r'\[(?P<text>.+)\]\((?P=<link>.+)\)',raw):
+        raw.replace(match.group(), match.group('text'))
+        links.append(match.group('link'))
+    comment = rc.comment({
     _id : item['id'],
     source : 'askreddit'
     date : datetime.datetime.fromtimestamp(item['created_utc']),
     thread_id : re.search(r'[a-zA-Z0-9]+$',item['link_id']).group(),
     parent_id : re.search(r'[a-zA-Z0-9]+$',item['parent_id']).group(),
-    child_id : [],
-    counted : 0
-    author : item['author'],
-    polarity : item['controversiality'],
-    strings : word_tokenize(item['body']),
-    stems : [snowball.stem(token) for token in word_tokenize(item['body'])],
-    lemmas : [wordnet.lemmatize(token) for token in word_tokenize(item['body'])]
-    }
-    return mongo.reddit.comments.insert(document)
+    'author' : item['author'],
+    'polarity' : {user : item['controversiality']},
+    'raw' : raw
+    })
+    return comment.insert()
 
 def traverse_comments(level):
     """Traverse comment hierarchies depth-first"""
@@ -110,12 +110,12 @@ def traverse_comments(level):
 def write_page(page):
     """Compress page and write page to file"""
     try:
-        os.makedirs(RCDIR + "/raw/reddit/")
+        os.makedirs(RCDIR + "/raw/askreddit/")
     except OSError:
-        if not os.path.isdir(RCDIR + "/raw/reddit/"):
+        if not os.path.isdir(RCDIR + "/raw/askreddit/"):
             raise
     id36 = page[0]['data']['children'][0]['id']
-    with gzip.GzipFile(RCDIR + "/raw/reddit/" + str(id36) + ".json.gz", 'wb') as f:
+    with gzip.GzipFile(RCDIR + "/raw/askreddit/" + str(id36) + ".json.gz", 'wb') as f:
         f.write(json.dumps(page))
     return True
 

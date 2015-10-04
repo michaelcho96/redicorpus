@@ -17,36 +17,74 @@ import glob
 import logging
 import yaml
 import json
-from nltk import ngrams
+from nltk import ngrams, snowball, wordnet
 from pymongo import MongoClient
 
 #RCDIR = os.environ.get('RCDIR')
 RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
 os.chdir(RCDIR)
 mongo = MongoClient()
-logging.basicConfig(filename = RCDIR + '/redicorpus.log', level = logging.INFO, format = '%(asctime)s %(message)s')
+snowball = snowball.Englishstemmer()
+wordnet = wordnet.WordNetLemmatizer()
+logging.basicConfig(filename = RCDIR + '/etc/redicorpus.log', level = logging.INFO, format = '%(asctime)s %(message)s')
 
-class comment(object):
+class comment(dict):
     """A single communicative event"""
 
-    def __init__(self):
-        self = self
+    def __init__(self, data):
+        if type(data) == dict:
+            self = data
+            if 'raw' not in self:
+                raise ValueError("Comments need a 'raw' value field")
+            self['tokens']['strings'] = word_tokenize(self['raw'])
+            self['tokens']['stems'] = [snowball.stem(token) for token in self['strings']]
+            self['tokens']['lemmas'] = [wordnet.lemmatize(token) for token in             self['strings']
+            if 'date' not in self:
+                self['date'] = datetime.datetime.now()
+            if 'child_id' not in self:
+                self['child_id'] = []
+            if 'polarity' not in self:
+                self['polarity'] = {}
+            self['counted'] = False
+        else:
+            raise TypeError
 
-    def counts(self, grams=(1,2,3)):
+    def insert(self):
+        collection = pymongo.collection.Collection(self['source'], 'comments')
+        collection.insert_one(self)
+
+    def count(self, grams=(1,2,3)):
         database = self['source']
-        for name in  ('strings', 'stems', 'lemmas'):
-            collection = mongo.collection.Collection(database, name + 'Counts')
-            for n in grams:
-                gram_list = ngrams(self[name]['data'], n)
-                for gram in gram_list:
-                    collection.replace({'_id':gram, date:self.date})
-            collection = mongo.collection.Collection(database, name + 'Activation')
-            for n in grams:
+        for i in grams:
+            collection = pymongo.collection.Collection(database, str(i))
+            _id = datetime.datetime(self['date'].year,
+                                    self['date'].month,
+                                    self['date'].day)
+            for token_type in self['tokens'].keys():
+                for gram in ngrams(self['tokens'][token_type], i):
+                    result = collection.update_one({'_id' : _id},
+                    {'$inc' : {token_type : {gram : {'frequency' : 1}}},
+                    {'$inc' : {token_type : {'_total' : 1}}},
+                    {'$push' : {token_type : {gram : {'_id' : self['_id']}}}}},
+                    upsert = True)
+        return True
 
+class body(dict):
+    """All of the frequency counts for a day"""
 
-    def read(self):
+    def __init__(self, data):
+        self = data
 
-    def build(self):
+class map(dict):
+    """ """
+
+    def __init__(self):
+
+    def test():
+
+    def control():
+
+def read(database, collection, _id)
 
     # class document(object):
 #     """A page with metadata"""
