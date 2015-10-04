@@ -12,15 +12,11 @@ import json
 import logging
 from nltk import ngrams, snowball, wordnet, word_tokenize
 import os
-from pymongo import MongoClient
+import pymongo
 import re
 import requests
 import yaml
 
-#RCDIR = os.environ.get('RCDIR')
-RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
-os.chdir(RCDIR)
-mongo = MongoClient()
 snowball = snowball.Englishstemmer()
 wordnet = wordnet.WordNetLemmatizer()
 logging.basicConfig(filename = RCDIR + '/etc/redicorpus.log', level = logging.INFO, format = '%(asctime)s %(message)s')
@@ -81,7 +77,7 @@ class map(dict):
 
     def control():
 
-def read(database, collection, _id)
+def read(database, collection, _id):
 
     # class document(object):
 #     """A page with metadata"""

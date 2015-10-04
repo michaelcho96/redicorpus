@@ -14,15 +14,11 @@ import logging
 import os
 from pymongo import MongoClient
 import re
-import redicorpus as rc
+import redicorpus.redicorpus as rc
 import requests
 import time
 import yaml
 
-mongo = MongoClient()
-#RCDIR = os.environ.get('RCDIR')
-RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'
-os.chdir(RCDIR)
 logging.basicConfig(filename = RCDIR + '/etc/askreddit.log', level = logging.INFO, format = '%(asctime)s %(message)s')
 
 def authorize():
