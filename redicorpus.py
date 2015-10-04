@@ -2,9 +2,6 @@
 """
 High temporal resolution, web-based corpus building and querying
 """
-__author__ = "Dillon Niederhut"
-__version__ = "0.1.0"
-__email__ = "dillon.niederhut@gmail.com"
 
 import datetime
 import glob

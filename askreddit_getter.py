@@ -2,10 +2,6 @@
 """
 Script to authenticate and scrape from reddit.com/r/AskReddit
 """
-__author__ = "Dillon Niederhut"
-__version__ = "0.1.0"
-__email__ = "dillon.niederhut@gmail.com"
-
 
 import datetime
 import gzip

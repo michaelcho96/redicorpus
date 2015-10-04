@@ -4,14 +4,9 @@
 
 """
 
-__author__ = "Dillon Niederhut"
-__version__ = "0.1.0"
-__email__ = "dillon.niederhut@gmail.com"
-
 from pymongo import MongoClient
-import redicorpus as rc
+import redicorpus.redicorpus as rc
 
-mongo = MongoClient()
 logging.basicConfig(filename = RCDIR + '/redicorpus.log', level = logging.INFO, format = '%(asctime)s %(message)s')
 
 if __name__ == '__main__':
