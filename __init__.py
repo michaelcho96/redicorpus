@@ -3,5 +3,5 @@
 import os
 import pymongo
 
-RCDIR = os.getcwd()
+RCDIR = os.path.abspath(os.path.dirname(__file__))
 mongo = pymongo.MongoClient()
