@@ -6,19 +6,16 @@ __author__ = "Dillon Niederhut"
 __version__ = "0.1.0"
 __email__ = "dillon.niederhut@gmail.com"
 
-import re
-import os
-import glob
-import logging
-import requests
 import datetime
-import os
 import glob
-import logging
-import yaml
 import json
-from nltk import ngrams, snowball, wordnet
+import logging
+from nltk import ngrams, snowball, wordnet, word_tokenize
+import os
 from pymongo import MongoClient
+import re
+import requests
+import yaml
 
 #RCDIR = os.environ.get('RCDIR')
 RCDIR = '/Users/dillonniederhut/Dropbox/pydir/redicorpus'

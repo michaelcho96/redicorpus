@@ -6,18 +6,18 @@ __author__ = "Dillon Niederhut"
 __version__ = "0.1.0"
 __email__ = "dillon.niederhut@gmail.com"
 
-import requests
+
 import datetime
-import time
-import os
-import logging
-import yaml
-import json
-import pymongo
 import gzip
+import json
+import logging
+import os
+from pymongo import MongoClient
 import re
 import redicorpus as rc
-from pymongo import MongoClient
+import requests
+import time
+import yaml
 
 mongo = MongoClient()
 #RCDIR = os.environ.get('RCDIR')
