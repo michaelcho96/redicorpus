@@ -18,10 +18,10 @@ def get_count(corpus, token):
     count = corpus.get(token)
     if not isinstance(count, int):
         raise TypeError("Corpus must be a dictionary of form token:count")
-    return rv
+    return count
 
 def has_token(corpus, token):
-    return corpus.has_key(token)
+    return token in corpus
 
 """ 
 Takes in a gram_file of n-grams and their counts.
@@ -56,14 +56,14 @@ def process_grams(gram_file, dest_dir, gram_n=999):
             if skip:
                 continue
             total_tokens += get_count(corpus, token)
-            if body.has_key(token):
+            if token in body:
                 body.update({token:body.get(token) + get_count(corpus, token)})
             else:
                 body.update({token:get_count(corpus, token)})
     body = {token:float(count)/total_tokens for token, count in body.items()}
     body = [(body.get(token)*total_tokens, body.get(token), token) for token in body]
     body = sorted(body, reverse=True)
-    filename = day + 'all' + gram_n + 'grams.csv'
+    filename = dest_dir + 'all' + gram_n + 'grams.csv'
     with open(filename,'w') as f:
         f.write(newfile_heading + '\n')
     with open(filename,'a') as f:
@@ -85,7 +85,7 @@ def top_gram_by_day():
     which_grams = ['1']
     for gram_num in which_grams:
         for day in glob.glob(CORPORA_DIR + '*/'):
-            print('Processing ' + day[CORPORA_DIR.length:])
+            print('Processing ' + day[len(CORPORA_DIR):])
             body = {}
             total_tokens = 0.
             for gram_f in glob.glob(day + gram_num + 'gram.txt'):
