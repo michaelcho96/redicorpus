@@ -16,7 +16,7 @@ IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '1', '2', '3', '4', '5', '6', '
 """Helper functions for process_grams"""
 def get_count(corpus, token):
     count = corpus.get(token)
-    if !isinstance(count, int):
+    if not isinstance(count, int):
         raise TypeError("Corpus must be a dictionary of form token:count")
     return rv
 
@@ -45,7 +45,7 @@ def process_grams(gram_file, dest_dir, gram_n=999):
     total_tokens = 0
     with open(gram_file, 'r') as f:
         corpus = ast.literal_eval(f.read())
-        if !isinstance(corpus, dict):
+        if not isinstance(corpus, dict):
             raise TypeError("gram_file must contain a dictionary.")
         for token in corpus:
             skip = False
