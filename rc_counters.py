@@ -14,6 +14,7 @@ import os
 import glob
 import logging
 import math
+IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
 RCDIR = os.getenv('HOME') + '/rc_static'
 logging.basicConfig(filename = 'tracker.log', level = logging.DEBUG, format = '%(asctime)s %(message)s')
 
@@ -254,6 +255,44 @@ def top_tokens():
         with open(filename,'a') as f:
             for ix, item in enumerate(body):
                 f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
+
+def top_gram_by_day():
+    import ast
+    import json
+    os.chdir(RCDIR)
+    which_grams = ['1']
+    for gram in which_grams:
+        for day in glob.glob(RCDIR + '/corpora/*/'):
+            print(day)
+            body = {}
+            total_tokens = 0.
+            for day_gramf in glob.glob(day + gram + 'gram.txt'):
+                with open(day_gramf, 'r') as f:
+                    dictionary = ast.literal_eval(f.read())
+                    for key in dictionary:
+                        ig = False
+                        for ignore in IGNORE_STR:
+                            if ignore in key:
+                                ig = True
+                                break
+                        if ig:
+                            continue
+                        total_tokens += dictionary.get(key)
+                        if body.has_key(key):
+                            body.update({key:body.get(key) + dictionary.get(key)})
+                        else:
+                            body.update({key:dictionary.get(key)})
+            body = {key:value/total_tokens for key, value in body.items()}
+            # with open('total' + str(gram) + 'grams.json', 'w') as f:
+            #     json.dump(body,f)
+            body = [(body.get(key)*total_tokens, body.get(key), key) for key in body if body.get(key) != 1]
+            body = sorted(body, reverse=True)
+            filename = day + 'all_top' + gram + 'grams.csv'
+            with open(filename,'w') as f:
+                f.write('rank,count,proportion,token\n')
+            with open(filename,'a') as f:
+                for ix, item in enumerate(body):
+                    f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
 
 def nltk_collocation_wrapper():
     import nltk
