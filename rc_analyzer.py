@@ -8,7 +8,8 @@ import json
 DATA_DIR = os.getenv('HOME') + "/Documents/RC/rc_static/"
 CORPORA_DIR = DATA_DIR + "corpora/"
 PROCESSED_DIR = DATA_DIR + "processed/"
-PROCCESSED_BY_DAY_DIR = PROCESSED_DIR + "by_day/"
+PROCESSED_BY_DAY_DIR = PROCESSED_DIR + "by_day/"
+PROCESSED_BY_GRAM_DIR = PROCESSED_DIR + "tokens/"
 
 
 """ 
@@ -19,9 +20,9 @@ Calls process_grams from analyze_utils on all n-grams in the CORPORA dirctory
 def process_all_grams(which_grams):
     "Beginning to process every gram file..."
     try:
-        os.makedirs(PROCCESSED_BY_DAY_DIR)
+        os.makedirs(PROCESSED_BY_DAY_DIR)
     except OSError:
-        if not os.path.isdir(PROCCESSED_BY_DAY_DIR):
+        if not os.path.isdir(PROCESSED_BY_DAY_DIR):
             raise
     for gram_num in which_grams:
         days = glob.glob(CORPORA_DIR + '*/')
@@ -29,25 +30,25 @@ def process_all_grams(which_grams):
             date = day[len(CORPORA_DIR):]
             print('Processing ' + date + 'gram' + gram_num)
             try:
-                os.makedirs(PROCCESSED_BY_DAY_DIR + date)
+                os.makedirs(PROCESSED_BY_DAY_DIR + date)
             except OSError:
-                if not os.path.isdir(PROCCESSED_BY_DAY_DIR + date):
+                if not os.path.isdir(PROCESSED_BY_DAY_DIR + date):
                     raise        
             gram_f = day + gram_num + 'gram.txt'    
             # for gram_f in glob.glob(day + gram_num + 'gram.txt'):
-            analyze_utils.process_grams(gram_f, PROCCESSED_BY_DAY_DIR + date, gram_num)
+            analyze_utils.process_grams(gram_f, PROCESSED_BY_DAY_DIR + date, gram_num)
     print("Done processing gram files")
 
-# def remove_old():
-#     files = glob.glob(CORPORA_DIR + '*/all*')
-#     for f in files:    
-#         print("removing " + f)
-#         os.remove(f)
+def remove_old():
+    files = glob.glob(CORPORA_DIR + '*/all*')
+    for f in files:    
+        print("removing " + f)
+        os.remove(f)
 
 def create_gram_list(gram):
     print("Creating list of unique tokens...")
     all_grams = set()
-    files = glob.glob(PROCCESSED_BY_DAY_DIR + '*/all' + gram + 'grams.csv')
+    files = glob.glob(PROCESSED_BY_DAY_DIR + '*/all' + gram + 'grams.csv')
     for f in files:
         with open(f, newline='') as csvfile:
             f_reader = csv.reader(csvfile)
@@ -59,10 +60,52 @@ def create_gram_list(gram):
         json.dump(all_grams,f)
     print("Finished list")
 
+def remove_all_gram_docs():
+    files = glob.glob(PROCESSED_BY_GRAM_DIR + '*')
+    for f in files:    
+        print("removing " + f)
+        os.remove(f)
+
+
+
+gram_file_name = "all1grams.csv"
+def create_gram_docs():
+    try:
+        os.makedirs(PROCESSED_BY_GRAM_DIR)
+    except OSError:
+        if os.path.isdir(PROCESSED_BY_GRAM_DIR):
+            remove_all_gram_docs()
+        else:
+            raise
+    created_files = set()
+    days = glob.glob(PROCESSED_DIR + 'by_day/*/')
+    for day in days:
+        date = day[len(PROCESSED_DIR + 'by_day/'):]
+        print('Working on ' + date)
+        try:
+            with open(day + gram_file_name, newline='') as gram_csv:
+                gram_reader = csv.reader(gram_csv)
+                for line in gram_reader:
+                    token = line[3]
+                    proportion = line[2]
+                    rank = line[0]
+                    count = line[1]
+                    print('token is ' + token)
+                    token_f_name = PROCESSED_BY_GRAM_DIR + token + ".csv"
+                    if token not in created_files:
+                        with open(token_f_name, mode='w') as token_f:
+                            token_f.write('date,rank,count,proportion\n')
+                        created_files.add(token)
+                    with open(token_f_name, mode='a') as token_f:
+                        token_f.write(date + ',' +  rank + ',' +  count + ',' +  proportion + '\n')     
+        except EnvironmentError:
+            continue
+
 
 
 if __name__ == '__main__':
-    which_grams=['1']
-    process_all_grams(which_grams)
-    create_gram_list('1')
+    # which_grams=['1']
+    # process_all_grams(which_grams)
+    # create_gram_list('1')
+    create_gram_docs() 
     

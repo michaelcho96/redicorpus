@@ -9,6 +9,7 @@ import logging
 import math
 
 DATA_DIR = "~/Documents/RC/rc_static/"
+PROCESSED_DIR = DATA_DIR + 'processed/'
 CORPORA_DIR = DATA_DIR + "corpora/"
 IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']', '^', '_', '+', '=', '\\', '/', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
 
@@ -69,6 +70,7 @@ def process_grams(gram_file, dest_dir, gram_n=999):
     with open(filename,'a') as f:
         for ix, item in enumerate(body):
             f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
+
 
 
 
