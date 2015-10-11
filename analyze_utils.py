@@ -10,7 +10,7 @@ import math
 
 DATA_DIR = "~/Documents/RC/rc_static/"
 CORPORA_DIR = DATA_DIR + "corpora/"
-IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
+IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']', '^', '_', '+', '=', '\\', '/', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
 
 
 """Helper functions for process_grams"""
@@ -32,7 +32,7 @@ rank
 proportion=count/(total tokens)
 
 Note that csv files have no identifying data, and as such should be
-stored in the same directory as the corrosponding gram files.
+stored in an identifying directory.
 
 For the sake of data size, ignores grams with substrings that indicate
 they are parts of urls or not words (see IGNORE_STR).
@@ -70,46 +70,52 @@ def process_grams(gram_file, dest_dir, gram_n=999):
         for ix, item in enumerate(body):
             f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
 
-""" 
-Assumes DATA_DIR contains CORPORA_DIRs organized by date, 
-containing files of format '#gram.txt'.
 
-Creates a all_#grams.csv file with rank,count,proportion,token 
-in the date folder
-"""
-def top_gram_by_day():
-    newfile_heading = 'rank,count,proportion,token'
-    import ast
-    import json
-    os.chdir(DATA_DIR)
-    which_grams = ['1']
-    for gram_num in which_grams:
-        for day in glob.glob(CORPORA_DIR + '*/'):
-            print('Processing ' + day[len(CORPORA_DIR):])
-            body = {}
-            total_tokens = 0.
-            for gram_f in glob.glob(day + gram_num + 'gram.txt'):
-                with open(gram_f, 'r') as f:
-                    corpus = ast.literal_eval(f.read())
-                    for token in corpus:
-                        skip = False
-                        for ignore in IGNORE_STR:
-                            if ignore in token:
-                                skip = True
-                                break
-                        if skip:
-                            continue
-                        total_tokens += get_count(corpus, token)
-                        if body.has_key(token):
-                            body.update({token:body.get(token) + get_count(corpus, token)})
-                        else:
-                            body.update({token:get_count(corpus, token)})
-            body = {token:count/total_tokens for token, count in body.items()}
-            body = [(body.get(token)*total_tokens, body.get(token), token) for token in body]
-            body = sorted(body, reverse=True)
-            filename = day + 'all' + gram_num + 'grams.csv'
-            with open(filename,'w') as f:
-                f.write(newfile_heading + '\n')
-            with open(filename,'a') as f:
-                for ix, item in enumerate(body):
-                    f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
+
+
+
+# """ 
+# Assumes DATA_DIR contains CORPORA_DIRs organized by date, 
+# containing files of format '#gram.txt'.
+
+# Creates a all_#grams.csv file with rank,count,proportion,token 
+# in the date folder
+
+# #
+# """
+# def top_gram_by_day():
+#     newfile_heading = 'rank,count,proportion,token'
+#     import ast
+#     import json
+#     os.chdir(DATA_DIR)
+#     which_grams = ['1']
+#     for gram_num in which_grams:
+#         for day in glob.glob(CORPORA_DIR + '*/'):
+#             print('Processing ' + day[len(CORPORA_DIR):])
+#             tok_count = {}
+#             total_tokens = 0.
+#             for gram_f in glob.glob(day + gram_num + 'gram.txt'):
+#                 with open(gram_f, 'r') as f:
+#                     corpus = ast.literal_eval(f.read())
+#                     for token in corpus:
+#                         skip = False
+#                         for ignore in IGNORE_STR:
+#                             if ignore in token:
+#                                 skip = True
+#                                 break
+#                         if skip:
+#                             continue
+#                         total_tokens += get_count(corpus, token)
+#                         if tok_count.has_key(token):
+#                             tok_count.update({token:tok_count.get(token) + get_count(corpus, token)})
+#                         else:
+#                             tok_count.update({token:get_count(corpus, token)})
+#             tok_prop = {token:count/total_tokens for token, count in tok_count.items()}
+#             body = [(tok_count.get(token), tok_prop.get(token), token) for token in tok_prop]
+#             body = sorted(body, reverse=True)
+#             filename = day + 'all' + gram_num + 'grams.csv'
+#             with open(filename,'w') as f:
+#                 f.write(newfile_heading + '\n')
+#             with open(filename,'a') as f:
+#                 for ix, item in enumerate(body):
+#                     f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
