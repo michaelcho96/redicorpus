@@ -4,6 +4,7 @@ import os
 import glob
 import csv
 import json
+import ast
 
 DATA_DIR = os.getenv('HOME') + "/Documents/RC/rc_static/"
 CORPORA_DIR = DATA_DIR + "corpora/"
@@ -101,11 +102,55 @@ def create_gram_docs():
         except EnvironmentError:
             continue
 
+def create_gram_doc(gram):
+    try:
+        os.makedirs(PROCESSED_BY_GRAM_DIR)
+    except OSError:
+        if not os.path.isdir(PROCESSED_BY_GRAM_DIR):
+            raise
+    token_f_name = PROCESSED_BY_GRAM_DIR + gram + ".csv"
+    with open(token_f_name, mode='w') as token_f:
+        token_f.write('date,rank,count,proportion\n')
+        days = glob.glob(PROCESSED_DIR + 'by_day/*/')
+        for day in days:
+            date = day[len(PROCESSED_DIR + 'by_day/'):len(day) - 1]
+            print('Working on ' + date)
+            try:
+                with open(day + gram_file_name, newline='') as gram_csv:
+                    gram_reader = csv.reader(gram_csv)
+                    for line in gram_reader:
+                        token = line[3]
+                        if token != gram:
+                            continue
+                        proportion = line[2]
+                        rank = line[0]
+                        count = line[1]
+                        token_f.write(date + ',' +  rank + ',' +  count + ',' +  proportion + '\n')     
+            except EnvironmentError:
+                continue
+
+"""Accepts a list of tokens to analyze"""
+def analyze_data_ranges(tokens):
+    with open(PROCESSED_DIR + "token_ranges.csv", mode='w') as output:
+        output_writer = csv.writer(output, lineterminator='\n')
+        output_writer.writerow(['token', 'min_rank', 'max_rank', 'rank_range', 'min_count', 'max_count', 'count_range', 'min_prop', 'max_prop', 'prop_range', 'days'])
+        for token in tokens:
+            ranges = analyze_utils.analyze_ranges(token)
+            if ranges != -1 and ranges[10] > 1:
+                output_writer.writerow(ranges)
+
+
+
+
 
 
 if __name__ == '__main__':
     # which_grams=['1']
     # process_all_grams(which_grams)
     # create_gram_list('1')
-    create_gram_docs() 
+    # create_gram_docs() 
+    token_list = []
+    with open(PROCESSED_DIR + "all_1gram_list.json", "r") as f:
+        token_list = ast.literal_eval(f.read())
+    analyze_data_ranges(token_list)
     

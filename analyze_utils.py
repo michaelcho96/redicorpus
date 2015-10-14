@@ -7,9 +7,11 @@ import os
 import glob
 import logging
 import math
+import csv
 
-DATA_DIR = "~/Documents/RC/rc_static/"
+DATA_DIR = os.getenv('HOME') + "/Documents/RC/rc_static/"
 PROCESSED_DIR = DATA_DIR + 'processed/'
+TOKENS_DIR = PROCESSED_DIR + 'tokens/'
 CORPORA_DIR = DATA_DIR + "corpora/"
 IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']', '^', '_', '+', '=', '\\', '/', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
 
@@ -72,7 +74,33 @@ def process_grams(gram_file, dest_dir, gram_n=999):
             f.write(str(ix + 1) + ',' + str(item[0]) + ',' + str(item[1]) + ',' + str(item[2]) + '\n')
 
 
-
+def analyze_ranges(token):
+    try:
+        token_filename = TOKENS_DIR + token + ".csv"
+        print(token_filename)
+        with open(token_filename, newline='') as token_csv:
+            tok_reader = csv.reader(token_csv)
+            max_rank, min_rank = -1, 99999999999
+            max_count, min_count = -1, 99999999999
+            max_prop, min_prop = -1, 99999999999
+            days = 0
+            for line in tok_reader:
+                if line[1] == 'rank':
+                    continue
+                rank = float(line[1])
+                count = float(line[2])
+                prop = float(line[3])
+                max_rank, min_rank = max(max_rank, rank), min(min_rank, rank)
+                max_count, min_count = max(max_count, count), min(min_count, count)
+                max_prop, min_prop = max(max_prop, prop), min(min_prop, prop)
+                days += 1
+            rank_range = max_rank - min_rank
+            count_range = max_count - min_count
+            prop_range = max_prop - min_prop
+            return [token, str(min_rank), str(max_rank), str(rank_range), str(min_count), str(max_count), str(count_range), str(min_prop), str(max_prop), str(prop_range), days]
+    except EnvironmentError:
+        print("Environment Error on " + token)
+        return -1
 
 
 
