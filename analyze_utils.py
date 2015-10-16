@@ -77,8 +77,8 @@ def process_grams(gram_file, dest_dir, gram_n=999):
 def analyze_ranges(token):
     try:
         token_filename = TOKENS_DIR + token + ".csv"
-        print(token_filename)
         with open(token_filename, newline='') as token_csv:
+            print(token_filename)
             tok_reader = csv.reader(token_csv)
             max_rank, min_rank = -1, 99999999999
             max_count, min_count = -1, 99999999999

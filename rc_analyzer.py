@@ -136,7 +136,7 @@ def analyze_data_ranges(tokens):
         output_writer.writerow(['token', 'min_rank', 'max_rank', 'rank_range', 'min_count', 'max_count', 'count_range', 'min_prop', 'max_prop', 'prop_range', 'days'])
         for token in tokens:
             ranges = analyze_utils.analyze_ranges(token)
-            if ranges != -1 and ranges[10] > 1:
+            if ranges != -1 and ranges[10] < 2 and float(ranges[5]) > 1:
                 output_writer.writerow(ranges)
 
 
