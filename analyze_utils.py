@@ -10,8 +10,6 @@ import math
 import csv
 
 DATA_DIR = os.getenv('HOME') + "/Documents/RC/rc_static/"
-PROCESSED_DIR = DATA_DIR + 'processed/'
-TOKENS_DIR = PROCESSED_DIR + 'tokens/'
 CORPORA_DIR = DATA_DIR + "corpora/"
 IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']', '^', '_', '+', '=', '\\', '/', '1', '2', '3', '4', '5', '6', '7', '8' '9', '0']
 
