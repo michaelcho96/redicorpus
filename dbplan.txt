@@ -1,0 +1,16 @@
+FIXED TABLES:
+date, token, count (PK = date + token)
+date, total# (PK = date)
+
+
+(Could generate each time, but won't)
+date, token, rank, proportion (PK = date + token)
+
+
+GENERATE EACH TIME:
+
+token,min_rank,max_rank,rank_range,min_count,max_count,count_range,min_prop,max_prop,prop_range,#days
+
+
+
+
