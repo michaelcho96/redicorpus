@@ -20,3 +20,9 @@ def has_token(corpus, token):
 def commit_and_close(connection):
     connection.commit()
     connection.close()
+    
+def init_connection():
+    return psycopg2.connect(
+                database=DATABASE, 
+                user=USERNAME, 
+                password=PASSWORD)

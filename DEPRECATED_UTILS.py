@@ -1,6 +1,5 @@
 """
-Utility for analyzing an already tokenized corpus.
-
+DEPRECATED.  FOR REFERENCE ONLY WHILE BUILDING NEW ANALYSIS TOOLS.
 """
 import re
 import os

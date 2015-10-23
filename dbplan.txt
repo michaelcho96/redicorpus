@@ -12,5 +12,10 @@ GENERATE EACH TIME:
 token,min_rank,max_rank,rank_range,min_count,max_count,count_range,min_prop,max_prop,prop_range,#days
 
 
+next step:
+reduce rawtokencount to only tokens used more than... twice
+and used on more than one day unless single day use > 10
+^^this table will be the one i will work with primarily
+
 
 

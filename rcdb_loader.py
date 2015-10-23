@@ -1,10 +1,20 @@
 """
-Python script to interface with a PostgresSQL database used to 
-organize and analyze RC data.
+Python functions to load initial data to a PostgreSQL database.
+Imports data from a CORPORA dir that is organized with date
+subdirectories each containing files with dictionaries of gram
+to count.
+
+When run as main, this will delete existing rawtokencount and daytotal
+data, replacing it with new data imported from the CORPORA.
+
+
+TODO: 
+    Figure out a way to implement generic create_table function.
+    Create functions for updating rcdb with new data
+
 """
 
 import psycopg2
-# import postgresql
 import re
 import os
 import glob
@@ -17,31 +27,17 @@ USERNAME = "michaelcho"
 PASSWORD = "rcpassword"
 DATA_DIR = os.getenv('HOME') + "/Documents/RC/rc_static/"
 CORPORA_DIR = DATA_DIR + "corpora/"
-IGNORE_STR = ['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']',
+IGNORE_STR = set(['/r/', '/u/', 'https//', 'http//', '?', '!', '[', ']',
                 '^', '_', '+', '=', '\\', '/', '1', '2', '3', '4', 
-                '5', '6', '7', '8' '9', '0', '\'', '\"' ]
-
-
-def init_connection():
-    return psycopg2.connect(
-                database=DATABASE, 
-                user=USERNAME, 
-                password=PASSWORD)
+                '5', '6', '7', '8' '9', '0', '\'', '\"' ])
  
 
-#TODO: Figure out a way to implement this
-# def create_table(name, cols, num_cols):
-#     if type(cols) != dict:
-#         raise TypeError("cols must be dictionary colname:type")
-#     createtablestr = "CREATE TABLE %s ("
-#     strvals = name + ","
-
-def create_raw_token_count():
-    connection = init_connection()
+def create_rawtokencount():
+    connection = utils.init_connection()
     cursor = connection.cursor()
-    command = "DROP TABLE IF EXISTS rawTokenCount"
+    command = "DROP TABLE IF EXISTS rawtokencount"
     cursor.execute(command)
-    command = "CREATE TABLE rawTokenCount (\
+    command = "CREATE TABLE rawtokencount (\
                             day date, \
                             token varchar(512), \
                             count int \
@@ -49,10 +45,10 @@ def create_raw_token_count():
     cursor.execute(command)
     utils.commit_and_close(connection)
 
-def create_day_total():
-    connection = init_connection()
+def create_daytotal():
+    connection = utils.init_connection()
     cursor = connection.cursor()
-    command = "DROP TABLE IF EXISTS dayTotal"
+    command = "DROP TABLE IF EXISTS daytotal"
     cursor.execute(command)
     command = "CREATE TABLE dayTotal (\
                             day date PRIMARY KEY, \
@@ -63,7 +59,7 @@ def create_day_total():
 
 
 def load_data(which_grams):
-    connection = init_connection()
+    connection = utils.init_connection()
     cursor = connection.cursor()
     # ADD ERROR CHECKING TO MAKE SURE TABLE DOESN'T ALREADY EXIST
     # OR TO MAKE SURE THIS IS UPDATING PROPERLY
@@ -104,7 +100,8 @@ def process_day(day_file, gram_n, date, cursor):
             if token + date in body:
                 command = "UPDATE rawTokenCount  \
                             SET count = count + {0} \
-                            WHERE day = {1}, token = {2};".format(token_count, psqlday, token)
+                            WHERE day = {1}, token = {2};".format(token_count, 
+                                                            psqlday, token)
                 cursor.execute(command)                    
             else:
                 body.add(token + date)
@@ -119,10 +116,15 @@ def process_day(day_file, gram_n, date, cursor):
 
 
 if __name__ == '__main__':
-    create_raw_token_count()
-    create_day_total()
-    which_grams=['1']
-    load_data(which_grams)
+    confirm_strs = set(["yes", "y", "Y", "Yes"])
+    print("This will clear all current rcdb data if it exists. Continue? (y/n)")
+    confirm = input(">>>")
+    if confirm in confirm_strs:
+        print("Password: ")
+        create_rawtokencount()
+        create_daytotal()
+        which_grams=['1']
+        load_data(which_grams)
 
 
         
