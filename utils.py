@@ -1,6 +1,11 @@
 import time
 import psycopg2
 
+DATABASE = "rcdb"
+USERNAME = "michaelcho"
+PASSWORD = "rcpassword"
+MAX_TOKEN_LENGTH = 100
+
 # Takes a string formatted "%Y_%m_%d" and returns a psql date
 # object created via psycopg2.Date(year, month, day) 
 def format_timestr(timestr):
@@ -20,7 +25,7 @@ def has_token(corpus, token):
 def commit_and_close(connection):
     connection.commit()
     connection.close()
-    
+
 def init_connection():
     return psycopg2.connect(
                 database=DATABASE, 

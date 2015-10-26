@@ -1,10 +1,12 @@
 FIXED TABLES:
-date, token, count (PK = date + token)
-date, total# (PK = date)
+rawTokenCount: day, token, daytokcount (PK = day + token)
+daytotal: day, totaltokens (PK = day)
 
 
 (Could generate each time, but won't)
-date, token, rank, proportion (PK = date + token)
+dailystats: day, token, rank, proportion (PK = day + token)
+
+proportion = daytokcount/totaltokens
 
 
 GENERATE EACH TIME:
@@ -17,5 +19,9 @@ reduce rawtokencount to only tokens used more than... twice
 and used on more than one day unless single day use > 10
 ^^this table will be the one i will work with primarily
 
-
-
+CREATE TABLE dailystats as
+SELECT raw.day as day,
+        raw.token as token,
+        daytokcount/totaltokens as proportion
+FROM rawTokenCount as raw, daytotal as daytotal
+WHERE rawtoken.token = daytotal.token;
