@@ -31,3 +31,10 @@ def init_connection():
                 database=DATABASE, 
                 user=USERNAME, 
                 password=PASSWORD)
+
+def create_table_query(name, args):
+    num_cols = len(args)/2
+    query = "CREATE TABLE {0} (".format(name)
+    i = 0
+    while i < len(args):
+        query += "{0} {1}".format(args[i], args[i + 1])

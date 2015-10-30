@@ -25,3 +25,13 @@ SELECT raw.day as day,
         daytokcount/totaltokens as proportion
 FROM rawTokenCount as raw, daytotal as daytotal
 WHERE rawtoken.token = daytotal.token;
+
+
+SELECT d.token as token,
+            d.day as day, 
+            d.proportion as proportion 
+            FROM dailystats as d
+            WHERE d.day BETWEEN {0} AND {1},
+            proportion = ((SELECT max(proportion) FROM dailystats) - 
+                        (SELECT min(proportion) FROM dailystats))
+            ;
